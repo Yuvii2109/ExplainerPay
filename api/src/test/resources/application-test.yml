@@ -1,0 +1,17 @@
+# The loader test is an integration test: it runs against the Postgres that
+# docker-compose already provides, and therefore against the same database the
+# demo runs on. Bring the stack up first:  docker compose up -d
+#
+# Testcontainers is deliberately not used. Docker Desktop on this machine does
+# not expose an engine endpoint the JVM can reach, and a second Postgres would
+# add a dependency to prove something the first one already proves.
+spring:
+  datasource:
+    url: ${PXE_TEST_DB_URL:jdbc:postgresql://localhost:15432/pxe}
+    username: ${PXE_TEST_DB_USER:pxe}
+    password: ${PXE_TEST_DB_PASSWORD:pxe}
+
+pxe:
+  stream:
+    # Tests assert ordering and content, not tempo.
+    hop-delay-ms: 5

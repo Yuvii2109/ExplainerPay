@@ -1,0 +1,18 @@
+[
+  { "instrument": "UPI",  "stage": "SWITCH_REQUEST", "p50Ms": 400,  "p99Ms": 8000,  "slaMs": 30000,
+    "nextStages": ["PAYER_DEBIT"] },
+  { "instrument": "UPI",  "stage": "PAYER_DEBIT",    "p50Ms": 1200, "p99Ms": 9000,  "slaMs": 30000,
+    "nextStages": ["PAYEE_CREDIT", "SWITCH_RETRY"] },
+  { "instrument": "UPI",  "stage": "SETTLEMENT",     "cycle": "T+1", "creditByLocal": "18:00",
+    "timezone": "UTC" },
+  { "instrument": "CARD", "stage": "NETWORK_AUTH",   "p50Ms": 1200, "p99Ms": 6000,  "slaMs": 20000,
+    "nextStages": ["CAPTURED"] },
+  { "instrument": "CARD", "stage": "AUTH_TO_CAPTURE","slaMs": 604800000,
+    "nextStages": ["CAPTURED"] },
+  { "instrument": "CARD", "stage": "SETTLEMENT",     "cycle": "T+2", "creditByLocal": "18:00",
+    "timezone": "UTC" },
+  { "instrument": "NETBANKING", "stage": "CALLBACK",  "p99Ms": 45000, "slaMs": 900000,
+    "nextStages": ["STATE_RECONCILED"] },
+  { "instrument": "UPI",  "stage": "PAYOUT",          "slaMs": 21600000,
+    "nextStages": ["PAYOUT_CREDITED"] }
+]

@@ -1,0 +1,57 @@
+{
+  "INSUFFICIENT_FUNDS": {
+    "merchant": "The customer's bank declined this payment because the account did not have enough balance. Nothing was debited and nothing is owed to you for this attempt. They can try again.",
+    "support": "Declined at the payer bank with {code}, insufficient funds. No debit occurred, so there is nothing to reverse and no reconciliation to chase. Tell the customer to retry with sufficient balance or another account. No escalation.",
+    "engineer": "PAYER_DEBIT returned {code} and the payment ended there. No retry was attempted, no reference was issued, and the ledger holds no entry. Resolved from the response code alone, with no model call."
+  },
+  "INCORRECT_MPIN": {
+    "merchant": "The customer entered the wrong UPI PIN, so their bank declined the payment. Nothing was debited. They can try again.",
+    "support": "{code} at the payer bank, incorrect MPIN. Customer-side and self-correcting. If it repeats, they should reset their UPI PIN in their payment app. Nothing to do on our side.",
+    "engineer": "PAYER_DEBIT returned {code}. Authentication failure at the issuer, terminal, no debit. Resolved from the response code, no model call."
+  },
+  "DECLINED_BY_CUSTOMER": {
+    "merchant": "The customer cancelled this payment on their own device. Nothing was debited.",
+    "support": "{code}, declined by the customer. There is no failure to explain: they chose not to pay. Offer a fresh request if they are still on the line.",
+    "engineer": "PAYER_DEBIT returned {code}, a customer-initiated refusal at the PSP app. Terminal, no debit, no ledger entry."
+  },
+  "INTENT_EXPIRED_NO_ACTION": {
+    "merchant": "The QR code was never scanned and expired. No payment was attempted and no money moved.",
+    "support": "Intent expired unused at {expiredTime}. There is no customer-side failure here, because no customer ever engaged with it. Generate a fresh QR if they are still present.",
+    "engineer": "INTENT_CREATED with an expiry timer, no QR_SCANNED hop recorded, INTENT_EXPIRED at {expiredTime}. The expiry is our own timer firing, not a rail response. Rule INTENT_EXPIRED_UNUSED matched. No model call."
+  },
+  "RRN_MUTATION_ON_RETRY": {
+    "merchant": "Your money is not lost. The first attempt timed out at the payment network and the automatic retry went through, but under a new reference number. Our settlement run picks payments up by their original reference, so this one was skipped rather than rejected. It is captured, it is owed to you, and it will be released once the reference is re-bound.",
+    "support": "Deemed success with {code} on the first attempt; the retry succeeded under {referenceActive}. Settlement batch {batch} bound the original {referenceKind} {referenceSuperseded} and excluded it at close. The merchant is owed the full amount. Action REBIND_RRN_AND_REQUEUE needs ops approval. Tell them the funds are safe and give the next cycle date, not an apology for a failure, because it did not fail.",
+    "engineer": "PAYER_DEBIT timed out with {code} under {referenceKind} {referenceSuperseded}. The switch retried and the debit succeeded under {referenceActive}; PAYEE_CREDIT confirmed. SETTLEMENT_SCHEDULED recorded boundReference {referenceSuperseded}, the pre-retry value, and BATCH_CLOSED for {batch} reported included=false. Root cause: the settlement selector binds the reference captured at schedule time rather than the current active reference of the payment. Rule RECON_RRN_MUTATION matched."
+  },
+  "BANK_CUTOFF_MISSED_WEEKEND": {
+    "merchant": "The payment succeeded, but it landed just after that day's settlement cut-off, so it rolled into the next cycle. That cycle fell across non-working days, which is why it reached you on {payoutDate}. Nothing failed and the full amount was paid.",
+    "support": "Settled late. Captured before the cut-off at {cutoffTime} but scheduled at {scheduledTime}, missing it by seconds, then rolled across a non-working stretch to {payoutDate}. Legitimate, and worth flagging proactively rather than waiting for the merchant to ask.",
+    "engineer": "SETTLEMENT_SCHEDULED recorded missedCutoff=true at {scheduledTime} against a cut-off of {cutoffTime}, on cycle {cycle}. The next eligible cycle landed on {payoutDate}. Rule SETTLEMENT_CUTOFF_MISSED matched. Note this is a SUCCESS tag carrying a debt: the rails are content and the expectation model is not."
+  },
+  "PARTIAL_CAPTURE_DRIFT": {
+    "merchant": "You authorized {authorizedAmount} and captured {capturedAmount}, so {capturedAmount} was settled to you. The remaining amount was never taken from the customer. Their bank released the hold on it on {residualReleasedDate}, which is why they may have seen the full amount blocked for a week before it returned.",
+    "support": "Partial capture. The merchant captured {capturedAmount} of a {authorizedAmount} authorization, usually a line-item change after the order. The residual {residualAmount} was held by the issuer until {residualReleasedDate}. If the customer complains about a missing amount, this is the answer and it has already resolved itself. No action.",
+    "engineer": "NETWORK_AUTH for {authorizedAmount}, CAPTURED for {capturedAmount}, and AUTH_RESIDUAL_RELEASED of {residualAmount} on the issuer's own timer at {residualReleasedDate}. The payout matches the capture rather than the authorization, which is correct. Rule AUTH_CAPTURE_DRIFT matched. Flagged rather than errored, because partial capture is legitimate."
+  },
+  "DUPLICATE_CALLBACK": {
+    "merchant": "The customer's bank sent us the same confirmation twice. We recognised the second one and ignored it. You were credited once, for the correct amount. Nothing needs to be done.",
+    "support": "Duplicate callback on the same reference {reference}, suppressed by idempotency. One ledger entry, one payout. If the customer says they were charged twice, they were not, and the single debit on their statement will confirm it.",
+    "engineer": "CALLBACK_RECEIVED arrived twice on {reference}. The second was marked DUPLICATE_SUPPRESSED with duplicateOf set, by the idempotency guard, before it reached the ledger. One LedgerEntry, one payout of {settledAmount}. Rule IDEMPOTENT_DUPLICATE matched. This is a correctness guarantee firing, recorded rather than silent."
+  },
+  "BENEFICIARY_BANK_UNAVAILABLE": {
+    "merchant": "The customer was debited but our receiving bank could not be reached, so the credit did not complete. The network has already started an automatic reversal and the customer will get their money back. You should not treat this order as paid.",
+    "support": "{code} at PAYEE_CREDIT after a timeout. The customer WAS debited, so they will call. The auto-reversal was initiated at {reversalTime} with a {slaHours} hour window. Give the customer that window and do not ask them to raise a dispute, because the reversal is already running. The merchant should not ship.",
+    "engineer": "PAYER_DEBIT succeeded under {reference}, then PAYEE_CREDIT failed with {code}. AUTO_REVERSAL_INITIATED at {reversalTime}, still PENDING, {slaHours} hour SLA. Asymmetric state: debit without credit, with a reversal in flight. Rule BENEFICIARY_DOWN_AUTOREVERSE matched. Watch for reversal confirmation; its absence inside the SLA escalates."
+  },
+  "ISSUER_SOFT_DECLINE_RETRY_SUCCESS": {
+    "merchant": "The customer's bank was briefly unavailable and declined the first attempts. A later attempt went through. The payment succeeded and has been settled to you in full.",
+    "support": "Soft declines with {code}, issuer unavailable, recovered after {attempts} attempts. The customer may have seen failure messages before the success. Reassure them there is only one charge and their statement will show one.",
+    "engineer": "NETWORK_AUTH declined with {code} and was retried; the chain is linked through retryOf and succeeded on attempt {attempts} under {reference}. Single capture, single payout of {settledAmount}. Rule SOFT_DECLINE_RECOVERED matched. The deviation is recorded so retry cost stays visible in aggregate: three auth attempts is three network fees."
+  },
+  "LATE_CALLBACK_AFTER_SESSION_CLOSE": {
+    "merchant": "The customer's bank confirmed this payment long after we had timed the session out and shown a failure. The money did arrive and you have been settled. If the customer told you it failed, they were looking at our screen, not at their bank.",
+    "support": "Classic late callback. We showed the customer a failure at {abandonedTime} and the bank confirmed success at {callbackTime}, {lateBy} past our timeout; we reconciled the state forward at {reconciledTime}. The customer WILL believe this failed and may have paid again by another method. Check for a second payment from the same customer before responding.",
+    "engineer": "SESSION_ABANDONED at {abandonedTime} on our own timer. CALLBACK_RECEIVED at {callbackTime}, {lateBy} past that timeout, then STATE_RECONCILED moved ABANDONED to SUCCESS at {reconciledTime}. Rule LATE_CALLBACK_RECONCILED matched. The CUSTOMER_SAW_FAILURE deviation is derived rather than observed, and exists to drive the duplicate-payment check."
+  }
+}

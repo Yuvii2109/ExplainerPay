@@ -1,0 +1,88 @@
+name: pxe
+
+# Published host ports are shifted off the defaults and are overridable, because
+# unrelated projects commonly hold 5432/8080/8000/3000. Container-internal ports
+# are standard, so nothing inside the network cares.
+#
+# Four containers. That is the complexity budget (reference, section 5).
+# pxe-ai deliberately receives no database credentials. A reviewer can verify
+# that by reading this file, which is the whole point of it being a container.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pxe}
+      POSTGRES_USER: ${POSTGRES_USER:-pxe}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pxe}
+    ports:
+      - "${PXE_PORT_POSTGRES:-15432}:5432"
+    volumes:
+      - pxe-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pxe} -d ${POSTGRES_DB:-pxe}"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  pxe-api:
+    build: ./api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-pxe}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-pxe}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pxe}
+      PXE_AI_URL: http://pxe-ai:8000
+      PXE_SCENARIOS_RESOURCE: file:/app/data/payment-scenarios.json
+      PXE_EXPECTATIONS_RESOURCE: file:/app/data/expectations.json
+      PXE_RAIL_SEQUENCES_RESOURCE: file:/app/data/rail-sequences.json
+      PXE_CAUSES_RESOURCE: file:/app/data/causes.json
+      PXE_CAUSE_TEMPLATES_RESOURCE: file:/app/data/cause-templates.json
+    volumes:
+      # One copy of the dataset, at the repository root where section 6 puts it.
+      - ./data:/app/data:ro
+    ports:
+      - "${PXE_PORT_API:-18080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 5s
+
+  pxe-ai:
+    build: ./ai
+    # No SPRING_DATASOURCE_*, no DATABASE_URL, no POSTGRES_*. Non-negotiable rule 4.
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.5-flash-lite}
+      PXE_CAUSES_PATH: /app/data/causes.json
+    volumes:
+      # The cause taxonomy, read-only. Still no database, still no credentials.
+      - ./data:/app/data:ro
+    ports:
+      - "${PXE_PORT_AI:-18000}:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request;urllib.request.urlopen('http://localhost:8000/health').read()"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
+
+  pxe-web:
+    build: ./web
+    environment:
+      PXE_API_URL: http://pxe-api:8080
+      NEXT_PUBLIC_PXE_API_URL: http://localhost:${PXE_PORT_API:-18080}
+    ports:
+      - "${PXE_PORT_WEB:-13000}:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+
+volumes:
+  pxe-pgdata:

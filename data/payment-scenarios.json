@@ -1,0 +1,486 @@
+{
+  "version": "1.0.0",
+  "anchorDate": "2026-03-08T00:00:00Z",
+  "paths": {
+    "NONE": "Success with no deviation. No explanation owed, no cost.",
+    "CODE": "The rail's own response code fully explains it. Deterministic, no model.",
+    "RULE": "A rule in the catalogue attributes the cause. Deterministic, no model.",
+    "MODEL": "No rule fires. Admission control decides whether to spend a model call.",
+    "ABSTAIN": "Reached the model, and the correct output is that the cause cannot be determined."
+  },
+  "coverageTargets": {
+    "deterministicCoverage": 0.8,
+    "causeAccuracy": 0.85,
+    "falseAttribution": 0.02,
+    "abstentionCorrectness": 0.9
+  },
+  "scenarios": [
+    {
+      "id": "PXE-001",
+      "name": "clean-upi-success",
+      "title": "Clean UPI QR payment",
+      "instrument": "UPI",
+      "rail": "UPI_QR",
+      "amountMinor": 50000,
+      "currency": "INR",
+      "injectedCause": null,
+      "expected": {
+        "tag": "SUCCESS", "responseCode": "00", "deviations": [], "debt": 0,
+        "explanationRequired": false, "path": "NONE", "modelCalls": 0, "rule": null
+      },
+      "hops": [
+        { "seq": 1, "stage": "INTENT_CREATED", "actor": "PXE", "at": "2026-03-08T10:00:00.100Z", "status": "OK", "latencyMs": 12 },
+        { "seq": 2, "stage": "QR_SCANNED", "actor": "CUSTOMER_PSP", "at": "2026-03-08T10:00:06.400Z", "status": "OK", "latencyMs": 6300 },
+        { "seq": 3, "stage": "SWITCH_REQUEST", "actor": "NPCI", "at": "2026-03-08T10:00:06.900Z", "status": "OK", "latencyMs": 500 },
+        { "seq": 4, "stage": "PAYER_DEBIT", "actor": "PAYER_BANK", "at": "2026-03-08T10:00:08.100Z", "status": "OK", "code": "00", "latencyMs": 1200 },
+        { "seq": 5, "stage": "PAYEE_CREDIT", "actor": "PAYEE_BANK", "at": "2026-03-08T10:00:08.900Z", "status": "OK", "code": "00", "latencyMs": 800, "reference": { "kind": "RRN", "value": "445100000001" } },
+        { "seq": 6, "stage": "SETTLEMENT_SCHEDULED", "actor": "PXE", "at": "2026-03-08T10:00:09.100Z", "status": "OK", "batch": "SB-4401", "cycle": "T+1" },
+        { "seq": 7, "stage": "PAYOUT_CREDITED", "actor": "MERCHANT_BANK", "at": "2026-03-09T14:02:00.000Z", "status": "OK", "reference": { "kind": "UTR", "value": "UTR2603090001" } }
+      ],
+      "explanation": null,
+      "demoNote": "Act 1. A tag, a timeline, a settlement date, nothing else. Token counter stays at zero."
+    },
+    {
+      "id": "PXE-002",
+      "name": "clean-card-success",
+      "title": "Clean card payment, auth then capture",
+      "instrument": "CARD",
+      "rail": "CARD_DOMESTIC",
+      "amountMinor": 249900,
+      "currency": "INR",
+      "injectedCause": null,
+      "expected": {
+        "tag": "SUCCESS", "responseCode": "00", "deviations": [], "debt": 0,
+        "explanationRequired": false, "path": "NONE", "modelCalls": 0, "rule": null
+      },
+      "hops": [
+        { "seq": 1, "stage": "AUTH_REQUEST", "actor": "PXE", "at": "2026-03-08T11:15:00.000Z", "status": "OK", "latencyMs": 20 },
+        { "seq": 2, "stage": "RISK_EVALUATED", "actor": "PXE", "at": "2026-03-08T11:15:00.180Z", "status": "PASS", "latencyMs": 180 },
+        { "seq": 3, "stage": "NETWORK_AUTH", "actor": "NETWORK", "at": "2026-03-08T11:15:01.400Z", "status": "OK", "code": "00", "latencyMs": 1220, "reference": { "kind": "ARN", "value": "ARN74512603080011" } },
+        { "seq": 4, "stage": "CAPTURED", "actor": "PXE", "at": "2026-03-08T11:15:02.000Z", "status": "OK", "amountMinor": 249900 },
+        { "seq": 5, "stage": "SETTLEMENT_SCHEDULED", "actor": "PXE", "at": "2026-03-08T11:15:02.200Z", "status": "OK", "batch": "SB-4402", "cycle": "T+2" },
+        { "seq": 6, "stage": "PAYOUT_CREDITED", "actor": "MERCHANT_BANK", "at": "2026-03-10T14:02:00.000Z", "status": "OK", "reference": { "kind": "UTR", "value": "UTR2603100007" } }
+      ],
+      "explanation": null,
+      "demoNote": "Shows the expectation model is per-instrument: cards settle T+2, UPI T+1, neither hardcoded."
+    },
+    {
+      "id": "PXE-003",
+      "name": "insufficient-funds",
+      "title": "Declined, insufficient funds",
+      "instrument": "UPI",
+      "rail": "UPI_QR",
+      "amountMinor": 1200000,
+      "currency": "INR",
+      "injectedCause": "INSUFFICIENT_FUNDS",
+      "expected": {
+        "tag": "DECLINED", "responseCode": "Z9", "deviations": [], "debt": 1,
+        "explanationRequired": true, "path": "CODE", "modelCalls": 0, "rule": null
+      },
+      "hops": [
+        { "seq": 1, "stage": "INTENT_CREATED", "actor": "PXE", "at": "2026-03-08T12:00:00.100Z", "status": "OK", "latencyMs": 11 },
+        { "seq": 2, "stage": "QR_SCANNED", "actor": "CUSTOMER_PSP", "at": "2026-03-08T12:00:05.000Z", "status": "OK", "latencyMs": 4900 },
+        { "seq": 3, "stage": "SWITCH_REQUEST", "actor": "NPCI", "at": "2026-03-08T12:00:05.400Z", "status": "OK", "latencyMs": 400 },
+        { "seq": 4, "stage": "PAYER_DEBIT", "actor": "PAYER_BANK", "at": "2026-03-08T12:00:06.200Z", "status": "DECLINED", "code": "Z9", "latencyMs": 800 }
+      ],
+      "explanation": {
+        "rootCause": "INSUFFICIENT_FUNDS",
+        "determinable": true,
+        "confidence": 1.0,
+        "citations": ["hop:4", "code:Z9"],
+        "merchant": "The payment was declined by the customer's bank because the account did not have enough balance. No money left the customer's account and nothing is owed to you for this attempt. The customer can retry.",
+        "support": "Declined at the payer bank with Z9, insufficient funds. No debit occurred, so there is nothing to reverse and no reconciliation follow-up. Advise the customer to retry with sufficient balance or another account. No escalation.",
+        "engineer": "PAYER_DEBIT returned Z9 at hop 4 after 800ms. Terminal at the payer bank, no switch retry attempted, no RRN issued. Ledger has no entry. Resolved from the response code alone, zero model calls."
+      },
+      "demoNote": "Beat 4, the anti-LLM beat. A genuine failure that owes an explanation and needs no model."
+    },
+    {
+      "id": "PXE-004",
+      "name": "wrong-mpin",
+      "title": "Declined, incorrect MPIN",
+      "instrument": "UPI",
+      "rail": "UPI_QR",
+      "amountMinor": 75000,
+      "currency": "INR",
+      "injectedCause": "INCORRECT_MPIN",
+      "expected": {
+        "tag": "DECLINED", "responseCode": "ZM", "deviations": [], "debt": 1,
+        "explanationRequired": true, "path": "CODE", "modelCalls": 0, "rule": null
+      },
+      "hops": [
+        { "seq": 1, "stage": "INTENT_CREATED", "actor": "PXE", "at": "2026-03-08T12:30:00.100Z", "status": "OK", "latencyMs": 10 },
+        { "seq": 2, "stage": "QR_SCANNED", "actor": "CUSTOMER_PSP", "at": "2026-03-08T12:30:08.000Z", "status": "OK", "latencyMs": 7900 },
+        { "seq": 3, "stage": "SWITCH_REQUEST", "actor": "NPCI", "at": "2026-03-08T12:30:08.300Z", "status": "OK", "latencyMs": 300 },
+        { "seq": 4, "stage": "PAYER_DEBIT", "actor": "PAYER_BANK", "at": "2026-03-08T12:30:09.100Z", "status": "DECLINED", "code": "ZM", "latencyMs": 800 }
+      ],
+      "explanation": {
+        "rootCause": "INCORRECT_MPIN",
+        "determinable": true,
+        "confidence": 1.0,
+        "citations": ["hop:4", "code:ZM"],
+        "merchant": "The customer entered an incorrect UPI PIN, so their bank declined the payment. Nothing was debited. They can try again.",
+        "support": "ZM at the payer bank, incorrect MPIN. Customer-side and self-correcting. Repeated ZM means they should reset their UPI PIN in their payment app. No action on our side.",
+        "engineer": "PAYER_DEBIT returned ZM at hop 4. Authentication failure at the issuer, terminal, no debit. Resolved from the response code, zero model calls."
+      },
+      "demoNote": "A second CODE-path scenario, so the self-explaining class reads as a class and not one lucky case."
+    },
+    {
+      "id": "PXE-005",
+      "name": "qr-expired",
+      "title": "QR expired with no customer action",
+      "instrument": "UPI",
+      "rail": "UPI_QR",
+      "amountMinor": 30000,
+      "currency": "INR",
+      "injectedCause": "INTENT_EXPIRED_NO_ACTION",
+      "expected": {
+        "tag": "EXPIRED", "responseCode": null, "deviations": ["NO_CUSTOMER_ACTION"], "debt": 1,
+        "explanationRequired": true, "path": "RULE", "modelCalls": 0, "rule": "INTENT_EXPIRED_UNUSED"
+      },
+      "hops": [
+        { "seq": 1, "stage": "INTENT_CREATED", "actor": "PXE", "at": "2026-03-08T13:00:00.100Z", "status": "OK", "latencyMs": 10, "expiresAt": "2026-03-08T13:05:00.000Z" },
+        { "seq": 2, "stage": "INTENT_EXPIRED", "actor": "PXE", "at": "2026-03-08T13:05:00.000Z", "status": "EXPIRED" }
+      ],
+      "explanation": {
+        "rootCause": "INTENT_EXPIRED_NO_ACTION",
+        "determinable": true,
+        "confidence": 1.0,
+        "citations": ["hop:1", "hop:2"],
+        "merchant": "The QR code was never scanned and expired after five minutes. No payment was attempted and no money moved.",
+        "support": "Intent expired unused. There is no customer-side failure to explain because no customer ever engaged with it. Generate a fresh QR if they are still present.",
+        "engineer": "INTENT_CREATED at 13:00:00.100 with expiresAt 13:05:00. No QR_SCANNED hop recorded. Expiry is our own timer firing, not a rail response. Zero model calls."
+      },
+      "demoNote": "The cheapest possible explanation of an absence. Contrast with PXE-014, where absence is genuinely undeterminable."
+    },
+    {
+      "id": "PXE-006",
+      "name": "deemed-success-rrn-mutation",
+      "title": "Deemed success, retry succeeded under a new reference",
+      "instrument": "UPI",
+      "rail": "UPI_QR",
+      "amountMinor": 1840000,
+      "currency": "INR",
+      "injectedCause": "RRN_MUTATION_ON_RETRY",
+      "expected": {
+        "tag": "DEEMED_SUCCESS", "responseCode": "U30",
+        "deviations": ["RRN_MUTATED", "UNSETTLED", "BATCH_EXCLUSION"], "debt": 1,
+        "explanationRequired": true, "path": "RULE", "modelCalls": 0, "rule": "RECON_RRN_MUTATION"
+      },
+      "hops": [
+        { "seq": 1, "stage": "INTENT_CREATED", "actor": "PXE", "at": "2026-03-08T10:00:03.000Z", "status": "OK", "latencyMs": 14 },
+        { "seq": 2, "stage": "RISK_EVALUATED", "actor": "PXE", "at": "2026-03-08T10:00:04.000Z", "status": "PASS", "latencyMs": 210 },
+        { "seq": 3, "stage": "SWITCH_REQUEST", "actor": "NPCI", "at": "2026-03-08T10:00:05.000Z", "status": "OK", "latencyMs": 400 },
+        { "seq": 4, "stage": "PAYER_DEBIT", "actor": "PAYER_BANK", "at": "2026-03-08T10:00:14.000Z", "status": "TIMEOUT", "code": "U30", "latencyMs": 9000, "reference": { "kind": "RRN", "value": "445100000811" } },
+        { "seq": 5, "stage": "SWITCH_RETRY", "actor": "NPCI", "at": "2026-03-08T10:00:44.000Z", "status": "OK", "latencyMs": 300, "retryOf": 3 },
+        { "seq": 6, "stage": "PAYER_DEBIT", "actor": "PAYER_BANK", "at": "2026-03-08T10:00:45.100Z", "status": "OK", "code": "00", "latencyMs": 1100, "retryOf": 4, "reference": { "kind": "RRN", "value": "445100000812" } },
+        { "seq": 7, "stage": "PAYEE_CREDIT", "actor": "PAYEE_BANK", "at": "2026-03-08T10:00:45.900Z", "status": "OK", "code": "00", "latencyMs": 800 },
+        { "seq": 8, "stage": "SETTLEMENT_SCHEDULED", "actor": "PXE", "at": "2026-03-08T10:00:46.000Z", "status": "OK", "batch": "SB-9931", "cycle": "T+1", "boundReference": "445100000811" },
+        { "seq": 9, "stage": "BATCH_CLOSED", "actor": "PXE", "at": "2026-03-09T18:00:00.000Z", "status": "CLOSED", "batch": "SB-9931", "included": false }
+      ],
+      "explanation": {
+        "rootCause": "RRN_MUTATION_ON_RETRY",
+        "determinable": true,
+        "confidence": 1.0,
+        "citations": ["hop:4", "hop:6", "hop:8", "hop:9", "rule:RECON_RRN_MUTATION"],
+        "merchant": "Your money is not lost. The first attempt timed out at the payment network and the automatic retry succeeded, but under a new reference number. Our settlement run picks payments up by their original reference, so this one was skipped rather than rejected. It is captured, it is owed to you, and it will be released in the next cycle once the reference is re-bound.",
+        "support": "Deemed success with U30 on attempt 1, retry succeeded under RRN 445100000812. Settlement batch SB-9931 binds the original RRN 445100000811 and excluded it at close. The merchant is owed the full amount. Action REBIND_RRN_AND_REQUEUE requires ops approval. Tell the merchant the funds are safe and give the next cycle date, not an apology for a failure, because it did not fail.",
+        "engineer": "U30 at hop 4 after a 9s payer-bank timeout, RRN 445100000811 issued. NPCI retry at hop 5 produced a successful debit at hop 6 under RRN 445100000812. PAYEE_CREDIT confirmed. SETTLEMENT_SCHEDULED at hop 8 recorded boundReference 445100000811, the pre-retry value. BATCH_CLOSED at hop 9 with included=false. Root cause: the settlement selector binds the reference captured at schedule time rather than the payment's current active reference. Rule RECON_RRN_MUTATION matched on (retryOf present, reference differs, boundReference equals superseded value)."
+      },
+      "demoNote": "Beats 5 to 7, the centrepiece. A three-day stall fully explained with the token counter still at zero."
+    },
+    {
+      "id": "PXE-007",
+      "name": "settled-late-cutoff-missed",
+      "title": "Succeeded, but settled nine days late",
+      "instrument": "UPI",
+      "rail": "UPI_COLLECT",
+      "amountMinor": 620000,
+      "currency": "INR",
+      "injectedCause": "BANK_CUTOFF_MISSED_WEEKEND",
+      "expected": {
+        "tag": "SUCCESS", "responseCode": "00", "deviations": ["SETTLED_LATE"], "debt": 1,
+        "explanationRequired": true, "path": "RULE", "modelCalls": 0, "rule": "SETTLEMENT_CUTOFF_MISSED"
+      },
+      "hops": [
+        { "seq": 1, "stage": "COLLECT_SENT", "actor": "PXE", "at": "2026-03-06T17:58:00.000Z", "status": "OK" },
+        { "seq": 2, "stage": "PAYER_DEBIT", "actor": "PAYER_BANK", "at": "2026-03-06T17:59:40.000Z", "status": "OK", "code": "00", "reference": { "kind": "RRN", "value": "445100000920" } },
+        { "seq": 3, "stage": "PAYEE_CREDIT", "actor": "PAYEE_BANK", "at": "2026-03-06T17:59:55.000Z", "status": "OK", "code": "00" },
+        { "seq": 4, "stage": "SETTLEMENT_SCHEDULED", "actor": "PXE", "at": "2026-03-06T18:00:12.000Z", "status": "OK", "batch": "SB-9800", "cycle": "T+1", "cutoffAt": "2026-03-06T18:00:00.000Z", "missedCutoff": true },
+        { "seq": 5, "stage": "PAYOUT_CREDITED", "actor": "MERCHANT_BANK", "at": "2026-03-15T14:02:00.000Z", "status": "OK", "reference": { "kind": "UTR", "value": "UTR2603150014" } }
+      ],
+      "explanation": {
+        "rootCause": "BANK_CUTOFF_MISSED_WEEKEND",
+        "determinable": true,
+        "confidence": 1.0,
+        "citations": ["hop:4", "hop:5", "rule:SETTLEMENT_CUTOFF_MISSED"],
+        "merchant": "The payment succeeded on 6 March but landed twelve seconds after that day's settlement cut-off, so it rolled into the next cycle. That cycle fell across a weekend and a bank holiday, which is why it reached you on 15 March rather than 9 March. Nothing failed and the full amount was paid.",
+        "support": "Settled late by 6 working days. Captured 17:59:55, scheduled 18:00:12, cut-off 18:00:00, missed by 12 seconds and rolled across a non-working stretch. Legitimate and worth flagging proactively rather than waiting for the merchant to ask.",
+        "engineer": "SETTLEMENT_SCHEDULED at hop 4 recorded missedCutoff=true, scheduled 12s past cutoffAt. Next eligible cycle was the following working day. Rule SETTLEMENT_CUTOFF_MISSED matched on (missedCutoff true, payout delta exceeds cycle SLA). Note this is a SUCCESS tag carrying a debt: the rails are content and the expectation model is not."
+      },
+      "demoNote": "The scenario proving the two-axis model. Tag is SUCCESS and it still owes an explanation."
+    },
+    {
+      "id": "PXE-008",
+      "name": "partial-capture-drift",
+      "title": "Authorized 12,000, captured 9,400",
+      "instrument": "CARD",
+      "rail": "CARD_DOMESTIC",
+      "amountMinor": 1200000,
+      "currency": "INR",
+      "injectedCause": "PARTIAL_CAPTURE_DRIFT",
+      "expected": {
+        "tag": "SUCCESS", "responseCode": "00", "deviations": ["AMOUNT_MISMATCH"], "debt": 1,
+        "explanationRequired": true, "path": "RULE", "modelCalls": 0, "rule": "AUTH_CAPTURE_DRIFT"
+      },
+      "hops": [
+        { "seq": 1, "stage": "AUTH_REQUEST", "actor": "PXE", "at": "2026-03-07T09:00:00.000Z", "status": "OK", "amountMinor": 1200000 },
+        { "seq": 2, "stage": "NETWORK_AUTH", "actor": "NETWORK", "at": "2026-03-07T09:00:01.300Z", "status": "OK", "code": "00", "amountMinor": 1200000, "reference": { "kind": "ARN", "value": "ARN74512603070090" } },
+        { "seq": 3, "stage": "CAPTURED", "actor": "PXE", "at": "2026-03-07T15:40:00.000Z", "status": "OK", "amountMinor": 940000 },
+        { "seq": 4, "stage": "AUTH_RESIDUAL_RELEASED", "actor": "ISSUER", "at": "2026-03-14T09:00:00.000Z", "status": "OK", "amountMinor": 260000 },
+        { "seq": 5, "stage": "PAYOUT_CREDITED", "actor": "MERCHANT_BANK", "at": "2026-03-09T14:02:00.000Z", "status": "OK", "amountMinor": 940000, "reference": { "kind": "UTR", "value": "UTR2603090044" } }
+      ],
+      "explanation": {
+        "rootCause": "PARTIAL_CAPTURE_DRIFT",
+        "determinable": true,
+        "confidence": 1.0,
+        "citations": ["hop:2", "hop:3", "hop:4", "rule:AUTH_CAPTURE_DRIFT"],
+        "merchant": "You authorized 12,000 and captured 9,400, so 9,400 was settled to you. The remaining 2,600 was never taken from the customer. Their bank released the hold on it on 14 March, which is why they may have seen 12,000 blocked for a week before it returned.",
+        "support": "Partial capture. Merchant captured 9,400 of a 12,000 authorization, likely a line-item change after the order. Residual 2,600 held by the issuer until 14 March. If the customer complains about a missing 2,600, this is the answer and it has already resolved itself. No action.",
+        "engineer": "NETWORK_AUTH at hop 2 for 1200000 minor, CAPTURED at hop 3 for 940000 minor after 6h40m. Delta 260000 released at hop 4 on the issuer's own 7-day timer. Payout matches capture, not auth, which is correct. Rule AUTH_CAPTURE_DRIFT matched on (capture < auth). Flagged rather than errored because partial capture is legitimate."
+      },
+      "demoNote": "Ledger reasoning and the amount-mismatch deviation. Good place to note the model never types any of these four numbers."
+    },
+    {
+      "id": "PXE-009",
+      "name": "duplicate-callback-suppressed",
+      "title": "Bank sent the callback twice",
+      "instrument": "NETBANKING",
+      "rail": "NETBANKING",
+      "amountMinor": 155000,
+      "currency": "INR",
+      "injectedCause": "DUPLICATE_CALLBACK",
+      "expected": {
+        "tag": "SUCCESS", "responseCode": "00", "deviations": ["DUPLICATE_SUPPRESSED"], "debt": 1,
+        "explanationRequired": true, "path": "RULE", "modelCalls": 0, "rule": "IDEMPOTENT_DUPLICATE"
+      },
+      "hops": [
+        { "seq": 1, "stage": "REDIRECT_ISSUED", "actor": "PXE", "at": "2026-03-08T16:00:00.000Z", "status": "OK" },
+        { "seq": 2, "stage": "BANK_SESSION", "actor": "PAYER_BANK", "at": "2026-03-08T16:00:31.000Z", "status": "OK" },
+        { "seq": 3, "stage": "CALLBACK_RECEIVED", "actor": "PAYER_BANK", "at": "2026-03-08T16:01:12.000Z", "status": "OK", "code": "00", "reference": { "kind": "UTR", "value": "UTR2603080311" } },
+        { "seq": 4, "stage": "CALLBACK_RECEIVED", "actor": "PAYER_BANK", "at": "2026-03-08T16:01:19.000Z", "status": "DUPLICATE_SUPPRESSED", "code": "00", "reference": { "kind": "UTR", "value": "UTR2603080311" }, "duplicateOf": 3 },
+        { "seq": 5, "stage": "SETTLEMENT_SCHEDULED", "actor": "PXE", "at": "2026-03-08T16:01:20.000Z", "status": "OK", "batch": "SB-9944", "cycle": "T+1" },
+        { "seq": 6, "stage": "PAYOUT_CREDITED", "actor": "MERCHANT_BANK", "at": "2026-03-09T14:02:00.000Z", "status": "OK", "amountMinor": 155000 }
+      ],
+      "explanation": {
+        "rootCause": "DUPLICATE_CALLBACK",
+        "determinable": true,
+        "confidence": 1.0,
+        "citations": ["hop:3", "hop:4", "rule:IDEMPOTENT_DUPLICATE"],
+        "merchant": "The customer's bank sent us the same confirmation twice, seven seconds apart. We recognised the second one and ignored it. You were credited once, for the correct amount. Nothing needs to be done.",
+        "support": "Duplicate callback on the same UTR, suppressed by idempotency. Single ledger entry, single payout. If the customer says they were charged twice, they were not, and the single debit on their statement will confirm it.",
+        "engineer": "CALLBACK_RECEIVED twice on UTR2603080311 at hops 3 and 4, 7s apart. Second marked DUPLICATE_SUPPRESSED with duplicateOf=3 by the idempotency guard before reaching the ledger. One LedgerEntry, one payout of 155000 minor. Rule IDEMPOTENT_DUPLICATE matched. This is a correctness guarantee firing, recorded rather than silent."
+      },
+      "demoNote": "A deviation representing the system working. Shows the deviation list is not a bug list."
+    },
+    {
+      "id": "PXE-010",
+      "name": "beneficiary-bank-timeout",
+      "title": "Beneficiary bank unavailable",
+      "instrument": "UPI",
+      "rail": "UPI_QR",
+      "amountMinor": 89000,
+      "currency": "INR",
+      "injectedCause": "BENEFICIARY_BANK_UNAVAILABLE",
+      "expected": {
+        "tag": "FAILED", "responseCode": "U28", "deviations": ["AUTO_REVERSAL_PENDING"], "debt": 1,
+        "explanationRequired": true, "path": "RULE", "modelCalls": 0, "rule": "BENEFICIARY_DOWN_AUTOREVERSE"
+      },
+      "hops": [
+        { "seq": 1, "stage": "INTENT_CREATED", "actor": "PXE", "at": "2026-03-08T19:10:00.000Z", "status": "OK" },
+        { "seq": 2, "stage": "QR_SCANNED", "actor": "CUSTOMER_PSP", "at": "2026-03-08T19:10:04.000Z", "status": "OK" },
+        { "seq": 3, "stage": "PAYER_DEBIT", "actor": "PAYER_BANK", "at": "2026-03-08T19:10:05.200Z", "status": "OK", "code": "00", "reference": { "kind": "RRN", "value": "445100001077" } },
+        { "seq": 4, "stage": "PAYEE_CREDIT", "actor": "PAYEE_BANK", "at": "2026-03-08T19:10:35.000Z", "status": "FAILED", "code": "U28", "latencyMs": 29800 },
+        { "seq": 5, "stage": "AUTO_REVERSAL_INITIATED", "actor": "NPCI", "at": "2026-03-08T19:10:36.000Z", "status": "PENDING", "slaHours": 48 }
+      ],
+      "explanation": {
+        "rootCause": "BENEFICIARY_BANK_UNAVAILABLE",
+        "determinable": true,
+        "confidence": 1.0,
+        "citations": ["hop:3", "hop:4", "hop:5", "rule:BENEFICIARY_DOWN_AUTOREVERSE"],
+        "merchant": "The customer was debited but our receiving bank was not reachable, so the credit could not complete. The network has already started an automatic reversal and the customer will get their money back within 48 hours. You should not treat this order as paid.",
+        "support": "U28 at PAYEE_CREDIT after a 29.8s timeout. The customer WAS debited, so they will call. Auto-reversal initiated at 19:10:36 with a 48h SLA. Give the customer the exact reversal window and do not ask them to raise a dispute, because the reversal is already running. Merchant should not ship.",
+        "engineer": "PAYER_DEBIT succeeded at hop 3 under RRN 445100001077. PAYEE_CREDIT failed U28 at hop 4 after 29800ms. AUTO_REVERSAL_INITIATED at hop 5, PENDING, 48h SLA. Asymmetric state: debit without credit. Rule BENEFICIARY_DOWN_AUTOREVERSE matched. Watch for reversal confirmation; absence inside SLA escalates to PXE-014's class."
+      },
+      "demoNote": "The scenario where the customer is out of pocket. The support rendering is deliberately the most actionable of the three."
+    },
+    {
+      "id": "PXE-011",
+      "name": "system-malfunction-unmapped",
+      "title": "System malfunction, no rule matches",
+      "instrument": "UPI",
+      "rail": "UPI_QR",
+      "amountMinor": 445000,
+      "currency": "INR",
+      "injectedCause": "SWITCH_STATE_DESYNC_AFTER_PARTIAL_ACK",
+      "expected": {
+        "tag": "FAILED", "responseCode": "96",
+        "deviations": ["UNEXPLAINED_TERMINAL", "LEDGER_ASYMMETRY"], "debt": 1,
+        "explanationRequired": true, "path": "MODEL", "modelCalls": 1, "rule": null
+      },
+      "hops": [
+        { "seq": 1, "stage": "INTENT_CREATED", "actor": "PXE", "at": "2026-03-08T20:00:00.000Z", "status": "OK" },
+        { "seq": 2, "stage": "QR_SCANNED", "actor": "CUSTOMER_PSP", "at": "2026-03-08T20:00:05.000Z", "status": "OK" },
+        { "seq": 3, "stage": "SWITCH_REQUEST", "actor": "NPCI", "at": "2026-03-08T20:00:05.400Z", "status": "PARTIAL_ACK", "latencyMs": 400 },
+        { "seq": 4, "stage": "PAYER_DEBIT", "actor": "PAYER_BANK", "at": "2026-03-08T20:00:07.000Z", "status": "OK", "code": "00", "reference": { "kind": "RRN", "value": "445100001190" } },
+        { "seq": 5, "stage": "SWITCH_RESPONSE", "actor": "NPCI", "at": "2026-03-08T20:00:21.000Z", "status": "FAILED", "code": "96", "latencyMs": 14000 },
+        { "seq": 6, "stage": "PAYEE_CREDIT", "actor": "PAYEE_BANK", "at": null, "status": "NOT_RECEIVED" }
+      ],
+      "explanation": {
+        "rootCause": "SWITCH_STATE_DESYNC_AFTER_PARTIAL_ACK",
+        "determinable": true,
+        "confidence": 0.78,
+        "hypothesis": true,
+        "citations": ["hop:3", "hop:4", "hop:5", "hop:6"],
+        "merchant": "The customer was debited but the payment network reported a system error before the credit reached us, so this order is not paid. We have flagged it for manual reconciliation and the customer's bank will either complete or reverse it. We will confirm within 48 hours.",
+        "support": "System malfunction, code 96, after a partial acknowledgement at the switch. Customer is debited and we hold no credit. This is NOT a standard auto-reversal path because the switch never reached a terminal agreement with the payer bank. Escalate to reconciliation with the RRN. Do not tell the customer a reversal is guaranteed.",
+        "engineer": "Proposed cause, confidence 0.78, unconfirmed. SWITCH_REQUEST returned PARTIAL_ACK at hop 3, itself unusual. PAYER_DEBIT then succeeded at hop 4 under RRN 445100001190. SWITCH_RESPONSE returned 96 at hop 5 after 14s. PAYEE_CREDIT never arrived. The pattern is consistent with the switch losing state between the partial ack and the payer bank's success, leaving the debit orphaned. No rule matches (PARTIAL_ACK, then success, then 96). Candidate for a new rule once a second instance is observed."
+      },
+      "demoNote": "Beat 8. The first model call in the entire demo, at roughly minute seven. The token counter moves off zero here and that transition IS the funnel argument."
+    },
+    {
+      "id": "PXE-012",
+      "name": "recon-fee-applied-twice",
+      "title": "Reconciliation break, ledger disagrees with the bank",
+      "instrument": "CARD",
+      "rail": "CARD_DOMESTIC",
+      "amountMinor": 4120712,
+      "currency": "INR",
+      "injectedCause": "MDR_FEE_APPLIED_TWICE_IN_BATCH",
+      "expected": {
+        "tag": "SUCCESS", "responseCode": "00",
+        "deviations": ["UNRECONCILED", "AMOUNT_MISMATCH"], "debt": 1,
+        "explanationRequired": true, "path": "MODEL", "modelCalls": 1, "rule": null
+      },
+      "hops": [
+        { "seq": 1, "stage": "NETWORK_AUTH", "actor": "NETWORK", "at": "2026-03-05T11:00:00.000Z", "status": "OK", "code": "00", "amountMinor": 4120712 },
+        { "seq": 2, "stage": "CAPTURED", "actor": "PXE", "at": "2026-03-05T11:00:02.000Z", "status": "OK", "amountMinor": 4120712 },
+        { "seq": 3, "stage": "SETTLEMENT_SCHEDULED", "actor": "PXE", "at": "2026-03-05T11:00:03.000Z", "status": "OK", "batch": "SB-9702", "cycle": "T+2" },
+        { "seq": 4, "stage": "PAYOUT_CREDITED", "actor": "MERCHANT_BANK", "at": "2026-03-07T14:02:00.000Z", "status": "OK", "amountMinor": 4120338 },
+        { "seq": 5, "stage": "RECON_BREAK_DETECTED", "actor": "PXE", "at": "2026-03-07T18:30:00.000Z", "status": "OPEN", "expectedMinor": 4120712, "actualMinor": 4120338, "deltaMinor": 374 }
+      ],
+      "explanation": {
+        "rootCause": "MDR_FEE_APPLIED_TWICE_IN_BATCH",
+        "determinable": true,
+        "confidence": 0.71,
+        "hypothesis": true,
+        "citations": ["hop:2", "hop:4", "hop:5"],
+        "merchant": "We settled 3.74 less than the captured amount. The shortfall matches a second application of the processing fee for this batch, which appears to be an error on our side rather than yours. It is open for correction and you will be credited the difference.",
+        "support": "Reconciliation break of 374 paise on batch SB-9702. Proposed cause is a duplicated MDR application, not a bank shortfall. Do not tell the merchant the bank underpaid until reconciliation confirms. Break is OPEN.",
+        "engineer": "Proposed cause, confidence 0.71, unconfirmed. Captured 4120712 minor, credited 4120338 minor, delta 374 minor. The delta equals the batch MDR rate applied to this payment a second time, which is why the hypothesis is fee duplication rather than a bank-side shortfall. Cross-batch confirmation needed before this becomes a rule: check whether every payment in SB-9702 shows a proportional delta."
+      },
+      "demoNote": "The second MODEL-path scenario. The model reasons about an arithmetic relationship no rule encodes yet. Good answer to 'what is the model actually FOR'."
+    },
+    {
+      "id": "PXE-013",
+      "name": "issuer-soft-decline-then-success",
+      "title": "Declined then succeeded on retry cascade",
+      "instrument": "CARD",
+      "rail": "CARD_DOMESTIC",
+      "amountMinor": 320000,
+      "currency": "INR",
+      "injectedCause": "ISSUER_SOFT_DECLINE_RETRY_SUCCESS",
+      "expected": {
+        "tag": "SUCCESS", "responseCode": "00", "deviations": ["RETRY_CASCADE"], "debt": 1,
+        "explanationRequired": true, "path": "RULE", "modelCalls": 0, "rule": "SOFT_DECLINE_RECOVERED"
+      },
+      "hops": [
+        { "seq": 1, "stage": "AUTH_REQUEST", "actor": "PXE", "at": "2026-03-08T08:00:00.000Z", "status": "OK" },
+        { "seq": 2, "stage": "NETWORK_AUTH", "actor": "NETWORK", "at": "2026-03-08T08:00:01.100Z", "status": "DECLINED", "code": "91", "note": "issuer unavailable" },
+        { "seq": 3, "stage": "NETWORK_AUTH", "actor": "NETWORK", "at": "2026-03-08T08:00:31.400Z", "status": "DECLINED", "code": "91", "retryOf": 2 },
+        { "seq": 4, "stage": "NETWORK_AUTH", "actor": "NETWORK", "at": "2026-03-08T08:02:02.000Z", "status": "OK", "code": "00", "retryOf": 3, "reference": { "kind": "ARN", "value": "ARN74512603080810" } },
+        { "seq": 5, "stage": "CAPTURED", "actor": "PXE", "at": "2026-03-08T08:02:03.000Z", "status": "OK", "amountMinor": 320000 },
+        { "seq": 6, "stage": "PAYOUT_CREDITED", "actor": "MERCHANT_BANK", "at": "2026-03-10T14:02:00.000Z", "status": "OK", "amountMinor": 320000 }
+      ],
+      "explanation": {
+        "rootCause": "ISSUER_SOFT_DECLINE_RETRY_SUCCESS",
+        "determinable": true,
+        "confidence": 1.0,
+        "citations": ["hop:2", "hop:3", "hop:4", "rule:SOFT_DECLINE_RECOVERED"],
+        "merchant": "The customer's bank was briefly unavailable and declined the first two attempts. The third attempt, two minutes later, went through. The payment succeeded and has been settled to you in full.",
+        "support": "Two soft declines with 91, issuer unavailable, recovered on the third attempt at 08:02:02. The customer may have seen two failure messages before the success. Reassure them there is only one charge and the statement will show one.",
+        "engineer": "NETWORK_AUTH declined 91 at hops 2 and 3, succeeded at hop 4 after 122s total. Retry chain linked via retryOf. Single capture, single payout. Rule SOFT_DECLINE_RECOVERED matched on (terminal success preceded by soft-decline codes). Deviation recorded so retry cost is visible in aggregate; three auth attempts is three network fees."
+      },
+      "demoNote": "Explains a success the customer experienced as two failures. A very common real ticket, and a good demonstration of why SUCCESS still carries a debt."
+    },
+    {
+      "id": "PXE-014",
+      "name": "beneficiary-silence-undeterminable",
+      "title": "Beneficiary bank sent nothing at all",
+      "instrument": "UPI",
+      "rail": "UPI_PAYOUT",
+      "amountMinor": 2750000,
+      "currency": "INR",
+      "injectedCause": "UNDETERMINABLE_BY_DESIGN",
+      "expected": {
+        "tag": "PENDING", "responseCode": null,
+        "deviations": ["ABSENT_TERMINAL_EVENT", "SLA_BREACHED"], "debt": 1,
+        "explanationRequired": true, "path": "ABSTAIN", "modelCalls": 1, "rule": null
+      },
+      "hops": [
+        { "seq": 1, "stage": "PAYOUT_INSTRUCTED", "actor": "PXE", "at": "2026-03-09T11:02:00.000Z", "status": "OK", "amountMinor": 2750000, "expectedBy": "2026-03-09T17:02:00.000Z" },
+        { "seq": 2, "stage": "PAYOUT_ACKNOWLEDGED", "actor": "MERCHANT_BANK", "at": "2026-03-09T11:02:04.000Z", "status": "OK" },
+        { "seq": 3, "stage": "PAYOUT_CREDITED", "actor": "MERCHANT_BANK", "at": null, "status": "ABSENT", "elapsedHours": 71, "slaHours": 6 }
+      ],
+      "explanation": {
+        "rootCause": null,
+        "determinable": false,
+        "confidence": null,
+        "hypothesis": false,
+        "abstained": true,
+        "citations": ["hop:1", "hop:2", "hop:3"],
+        "candidatesConsidered": [
+          { "cause": "BANK_CUTOFF_MISSED", "evidence": "none" },
+          { "cause": "BENEFICIARY_ACCOUNT_FROZEN", "evidence": "none" },
+          { "cause": "INSTRUCTION_NEVER_TRANSMITTED", "evidence": "none" }
+        ],
+        "merchant": "We instructed your bank to credit 27,500 on 9 March and they acknowledged receiving the instruction. They have not confirmed the credit, and it is now 71 hours past the six-hour window. We cannot tell you why from what we can see, because your bank has not sent us anything further. We have escalated and will update you.",
+        "support": "Payout acknowledged, never confirmed. 71h elapsed against a 6h SLA. We genuinely do not know the cause: there is no event to read. Do NOT offer the merchant a reason. Escalate to the banking team with the payout reference and tell the merchant exactly what we have asked and when we expect an answer.",
+        "engineer": "PAYOUT_INSTRUCTED at hop 1, ACKNOWLEDGED at hop 2 after 4s. PAYOUT_CREDITED absent at 71h against a 6h SLA. No further event from MERCHANT_BANK of any kind. Three causes are consistent with this evidence and none is distinguishable from it: cutoff miss, account freeze, transmission failure. Correct output is abstention. Any confident attribution here is a false attribution."
+      },
+      "demoNote": "Beat 11, the single most revealing test in the suite. A model that invents a cause here FAILS."
+    },
+    {
+      "id": "PXE-015",
+      "name": "late-netbanking-callback",
+      "title": "Callback arrived after the customer closed the tab",
+      "instrument": "NETBANKING",
+      "rail": "NETBANKING",
+      "amountMinor": 98000,
+      "currency": "INR",
+      "injectedCause": "LATE_CALLBACK_AFTER_SESSION_CLOSE",
+      "expected": {
+        "tag": "SUCCESS", "responseCode": "00",
+        "deviations": ["LATE_CALLBACK", "CUSTOMER_SAW_FAILURE"], "debt": 1,
+        "explanationRequired": true, "path": "RULE", "modelCalls": 0, "rule": "LATE_CALLBACK_RECONCILED"
+      },
+      "hops": [
+        { "seq": 1, "stage": "REDIRECT_ISSUED", "actor": "PXE", "at": "2026-03-08T14:00:00.000Z", "status": "OK" },
+        { "seq": 2, "stage": "BANK_SESSION", "actor": "PAYER_BANK", "at": "2026-03-08T14:00:28.000Z", "status": "OK" },
+        { "seq": 3, "stage": "SESSION_ABANDONED", "actor": "PXE", "at": "2026-03-08T14:15:00.000Z", "status": "TIMEOUT", "note": "no callback within 15m" },
+        { "seq": 4, "stage": "CALLBACK_RECEIVED", "actor": "PAYER_BANK", "at": "2026-03-08T14:41:00.000Z", "status": "OK", "code": "00", "lateBy": "26m", "reference": { "kind": "UTR", "value": "UTR2603080455" } },
+        { "seq": 5, "stage": "STATE_RECONCILED", "actor": "PXE", "at": "2026-03-08T14:41:02.000Z", "status": "OK", "from": "ABANDONED", "to": "SUCCESS" },
+        { "seq": 6, "stage": "PAYOUT_CREDITED", "actor": "MERCHANT_BANK", "at": "2026-03-09T14:02:00.000Z", "status": "OK", "amountMinor": 98000 }
+      ],
+      "explanation": {
+        "rootCause": "LATE_CALLBACK_AFTER_SESSION_CLOSE",
+        "determinable": true,
+        "confidence": 1.0,
+        "citations": ["hop:3", "hop:4", "hop:5", "rule:LATE_CALLBACK_RECONCILED"],
+        "merchant": "The customer's bank took 41 minutes to confirm this payment, long after we had timed the session out and shown a failure. The money did arrive and you have been settled. If the customer told you it failed, they were looking at our screen, not their bank's.",
+        "support": "Classic late callback. We showed the customer a failure at 14:15, the bank confirmed success at 14:41, and we reconciled the state forward. The customer WILL believe this failed and may have paid again by another method. Check for a second payment from the same customer before responding.",
+        "engineer": "SESSION_ABANDONED at hop 3 on our own 15m timer. CALLBACK_RECEIVED at hop 4, 26m past that timeout, code 00. STATE_RECONCILED at hop 5 moved ABANDONED to SUCCESS. Rule LATE_CALLBACK_RECONCILED matched on (terminal state reached after abandonment). The CUSTOMER_SAW_FAILURE deviation is derived, not observed, and exists to drive the duplicate-payment check."
+      },
+      "demoNote": "The support rendering carries an instruction the other two do not: check for a duplicate payment. Audience rendering is about action, not tone."
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+.env
+api/target/
+web/node_modules/
+web/.next/
+web/next-env.d.ts
+ai/__pycache__/
+**/__pycache__/
+*.class
