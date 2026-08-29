@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { PUBLIC_API, type Explained, type Hop } from "./pxe";
 
 export type StreamState = {
+  /** The stream could not be opened or died before finishing. */
+  failed: boolean;
   skeleton: string[];
   hops: Hop[];
   tag: string | null;
@@ -15,6 +17,7 @@ export type StreamState = {
 };
 
 const EMPTY: StreamState = {
+  failed: false,
   skeleton: [],
   hops: [],
   tag: null,
@@ -74,9 +77,11 @@ export function usePaymentStream(paymentId: string, live: boolean) {
       es.close();
     });
 
+    // An EventSource that cannot open reports nothing useful, so a failed stream must not be
+    // allowed to look like a payment with no hops. The caller falls back to the snapshot.
     es.onerror = () => {
       es.close();
-      setState((s) => ({ ...s, done: true }));
+      setState((s) => ({ ...s, done: true, failed: !s.done }));
     };
 
     return () => {

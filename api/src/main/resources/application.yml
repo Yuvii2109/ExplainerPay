@@ -20,6 +20,8 @@ pxe:
   expectations-resource: file:../data/expectations.json
   rail-sequences-resource: file:../data/rail-sequences.json
   ai-url: ${PXE_AI_URL:http://localhost:18000}
+  # The console is served from a different port, so every browser call is cross-origin.
+  cors-origins: ${PXE_CORS_ORIGINS:http://localhost:*,http://127.0.0.1:*}
   causes-resource: file:../data/causes.json
   cause-templates-resource: file:../data/cause-templates.json
   stream:

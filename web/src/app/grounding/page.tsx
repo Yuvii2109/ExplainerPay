@@ -31,9 +31,14 @@ export default async function Grounding() {
           <tbody>
             {rules.map((r) => (
               <tr key={r.id}>
-                <td>{r.id}</td>
-                <td>{r.rule}</td>
-                <td className={r.onFailure.startsWith("Reject") ? "NOT_MET" : "dim"}>
+                <td data-label="Rule" className="mono">
+                  {r.id}
+                </td>
+                <td data-label="Requires">{r.rule}</td>
+                <td
+                  data-label="On failure"
+                  className={r.onFailure.startsWith("Reject") ? "NOT_MET" : "dim"}
+                >
                   {r.onFailure}
                 </td>
               </tr>

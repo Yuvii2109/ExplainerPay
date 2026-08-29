@@ -125,10 +125,18 @@ export function GroundingScreen() {
             ) : (
               rejections.map((r, i) => (
                 <tr key={`${r.paymentId}-${i}`}>
-                  <td>{r.paymentId}</td>
-                  <td className="dim">{r.job}</td>
-                  <td className="NOT_MET">{r.rejectedBy}</td>
-                  <td className="dim">{r.detail}</td>
+                  <td data-label="Payment" className="mono">
+                    {r.paymentId}
+                  </td>
+                  <td data-label="Job" className="dim mono">
+                    {r.job}
+                  </td>
+                  <td data-label="Rule" className="NOT_MET mono">
+                    {r.rejectedBy}
+                  </td>
+                  <td data-label="Detail" className="dim">
+                    {r.detail}
+                  </td>
                 </tr>
               ))
             )}

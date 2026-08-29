@@ -44,8 +44,11 @@ export function PaymentScreen({ snapshot, live }: { snapshot: Snapshot; live: bo
     }
   }
 
-  // While streaming, the screen shows only what has arrived. Otherwise it shows the whole payment.
-  const showing = streaming
+  // While streaming, the screen shows only what has arrived. Otherwise, and whenever the stream
+  // could not be opened, it shows the whole payment: a broken stream must never read as a payment
+  // that produced no events.
+  const following = streaming && !stream.failed;
+  const showing = following
     ? {
         skeleton: stream.skeleton.length ? stream.skeleton : snapshot.skeleton,
         hops: stream.hops,
@@ -78,6 +81,8 @@ export function PaymentScreen({ snapshot, live }: { snapshot: Snapshot; live: bo
           <button className="replay" onClick={() => setStreaming(true)}>
             replay hop by hop
           </button>
+        ) : stream.failed ? (
+          <span className="streaming NOT_MET">stream unavailable, showing the record</span>
         ) : (
           <span className="streaming">{stream.done ? "complete" : "streaming"}</span>
         )}

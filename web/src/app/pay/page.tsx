@@ -45,14 +45,22 @@ export default async function Pay() {
           <tbody>
             {payments.map((p) => (
               <tr key={p.paymentId}>
-                <td>{p.paymentId}</td>
-                <td className="dim">{p.rail}</td>
-                <td className="num">{money(p.amountMinor, p.currency)}</td>
-                <td>
+                <td data-label="Payment" className="mono">
+                  {p.paymentId}
+                </td>
+                <td data-label="Rail" className="dim mono">
+                  {p.rail}
+                </td>
+                <td data-label="Amount" className="num">
+                  {money(p.amountMinor, p.currency)}
+                </td>
+                <td data-label="Tag">
                   <span className={`tag tag-${p.tag}`}>{p.tag}</span>
                 </td>
-                <td className="dim">{p.responseCode ?? "—"}</td>
-                <td className={p.debtOpen ? "NOT_MET" : "dim"}>
+                <td data-label="Code" className="dim mono">
+                  {p.responseCode ?? "—"}
+                </td>
+                <td data-label="Debt" className={p.debtOpen ? "NOT_MET" : "dim"}>
                   {p.debtOpen ? "open" : p.debtOpenedAt ? "paid" : "none"}
                 </td>
                 <td>

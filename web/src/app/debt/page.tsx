@@ -55,13 +55,21 @@ export default async function DebtQueue() {
             ) : (
               debt.queue.map((o) => (
                 <tr key={o.paymentId}>
-                  <td>{o.paymentId}</td>
-                  <td className="num">{money(o.amountMinor, o.currency)}</td>
-                  <td>
+                  <td data-label="Payment" className="mono">
+                    {o.paymentId}
+                  </td>
+                  <td data-label="Exposure" className="num">
+                    {money(o.amountMinor, o.currency)}
+                  </td>
+                  <td data-label="Tag">
                     <span className={`tag tag-${o.tag}`}>{o.tag}</span>
                   </td>
-                  <td className="dim">{o.responseCode ?? "—"}</td>
-                  <td className="num">{age(o.ageSeconds)}</td>
+                  <td data-label="Code" className="dim mono">
+                    {o.responseCode ?? "—"}
+                  </td>
+                  <td data-label="Age" className="num">
+                    {age(o.ageSeconds)}
+                  </td>
                   <td>
                     <Link className="scan" href={`/payment/${o.paymentId}`}>
                       open →
