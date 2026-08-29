@@ -7,7 +7,7 @@ type Props = { skeleton: string[]; hops: Hop[] };
 
 /**
  * The skeleton is drawn first and every row keeps its place. A hop lands into the skeleton row for
- * its stage; anything on no happy path — a retry, a reversal, a batch closure — appends below.
+ * its stage; anything on no happy path (a retry, a reversal, a batch closure) appends below.
  *
  * Nothing sits under the timeline on the page, so an append moves nothing that is already visible
  * and the cumulative layout shift stays zero by construction.

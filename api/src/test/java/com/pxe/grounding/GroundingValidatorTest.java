@@ -17,8 +17,8 @@ import org.springframework.test.context.ActiveProfiles;
 /**
  * Phase 7: G1 to G9 against real payments. Requires the compose stack.
  *
- * <p>The exit criterion is the G4 case — a deliberately malformed response carrying a literal
- * amount must be rejected whole and logged — but a validator that only enforces one rule is a
+ * <p>The exit criterion is the G4 case, a deliberately malformed response carrying a literal
+ * amount must be rejected whole and logged, but a validator that only enforces one rule is a
  * validator nobody should trust, so every rule that can fire is exercised here.
  */
 @SpringBootTest

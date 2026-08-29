@@ -3,7 +3,7 @@
 A payment traverses a real multi-stage backend: intent, switch, payer bank, payee bank, settlement,
 payout, reconciliation. Every hop is recorded. When it succeeds cleanly the system says so and
 nothing more. When it fails, stalls, or succeeds in a way that does not reconcile, the system **owes
-an explanation** and pays that debt — grounded in the actual events, in language matched to whoever
+an explanation** and pays that debt, grounded in the actual events, in language matched to whoever
 is asking.
 
 The specification is [planner/payment-explainability-reference.md](planner/payment-explainability-reference.md).
@@ -12,7 +12,7 @@ It is normative: if the code and the document disagree, the code is wrong.
 
 ## Boot it
 
-Requires Docker Desktop. Nothing else — no JDK, no Node, no Python on the host.
+Requires Docker Desktop. Nothing else, no JDK, no Node, no Python on the host.
 
 ```bash
 cp .env.example .env          # then put a Gemini key in GEMINI_API_KEY
@@ -55,7 +55,7 @@ docker compose down -v           # stop and forget everything, for a clean demo 
 
 **Scan PXE-006.** A UPI payment that timed out, retried under a new reference, and was skipped by
 its own settlement batch. Fully explained, three audiences, every number substituted from the
-ledger — with `TOKENS` still at zero, because a rule did it.
+ledger, with `TOKENS` still at zero, because a rule did it.
 
 **Open PXE-011 and press "ask why".** No response code and no rule account for it, so admission
 control admits it and the model is called. `TOKENS` moves off zero for the first time. The answer
@@ -72,9 +72,9 @@ measured yet" and a zero that means "failing" are different facts.
 
 ```
 docker-compose.yml     four containers, four healthchecks
-api/                   pxe-api  — Java 21, Spring Boot, one Maven module
-ai/                    pxe-ai   — Python 3.12, FastAPI. Holds no database credentials.
-web/                   pxe-web  — Next.js 15, React 19
+api/                   pxe-api , Java 21, Spring Boot, one Maven module
+ai/                    pxe-ai  , Python 3.12, FastAPI. Holds no database credentials.
+web/                   pxe-web , Next.js 15, React 19
 data/                  the dataset, the expectation model, the rail sequences,
                        the cause taxonomy and the per-cause templates
 planner/               the reference document
@@ -95,7 +95,7 @@ deterministic baseline: twelve payments resolved, three debts open, zero tokens 
 state to start a demo recording from. It also means running the suite discards any model answers
 you had cached.
 
-The suite never calls a live model — `ModelPathTest` stubs the client. An assertion that costs money
+The suite never calls a live model, `ModelPathTest` stubs the client. An assertion that costs money
 and can fail for weather reasons is not an assertion.
 
 ```bash
@@ -105,7 +105,7 @@ cd web && npm run check:budgets   # section 17.7: compositor-only animations
 ## Wiring a real QR
 
 Deferred, and the reason is worth knowing: a PSP test mode can force a decline, which reaches only
-the response-code path. The interesting scenarios — a reference mutating across a retry, a fee
-applied twice in a batch — are settlement and reconciliation failures that surface hours or days
+the response-code path. The interesting scenarios, a reference mutating across a retry, a fee
+applied twice in a batch, are settlement and reconciliation failures that surface hours or days
 later, and no sandbox emits them on demand. The scenario selector on `/pay` chooses which failure
 the rails return. Say that out loud; pretending otherwise is not credible.

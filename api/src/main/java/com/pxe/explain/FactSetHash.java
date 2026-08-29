@@ -20,7 +20,7 @@ import java.util.TreeSet;
  * explanation that cannot be reproduced is not evidence.
  *
  * <p>The digest covers L0 and L2 and nothing else. It deliberately excludes anything the pipeline
- * produced downstream — no root cause, no path, no text — so the hash identifies the question
+ * produced downstream (no root cause, no path, no text) so the hash identifies the question
  * rather than the answer.
  */
 public final class FactSetHash {

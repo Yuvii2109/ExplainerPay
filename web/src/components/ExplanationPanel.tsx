@@ -1,21 +1,31 @@
 "use client";
 
 import { useState } from "react";
+import { Prose } from "./Prose";
+import * as label from "@/lib/labels";
 import type { Explained } from "@/lib/pxe";
 
-type Props = { explanation: Explained | null; debtOpen: boolean; onExplain?: () => void; busy?: boolean };
+type Props = {
+  explanation: Explained | null;
+  debtOpen: boolean;
+  onExplain?: () => void;
+  busy?: boolean;
+};
 
 type Audience = "merchant" | "support" | "engineer";
 
-const AUDIENCES: Audience[] = ["merchant", "support", "engineer"];
+const AUDIENCES: { id: Audience; hint: string }[] = [
+  { id: "merchant", hint: "What happened to their money" },
+  { id: "support", hint: "What the agent must do" },
+  { id: "engineer", hint: "The mechanism, with the hops" },
+];
 
 /**
  * Pre-reserved. The panel holds its height from the first paint whether or not an explanation
  * exists, so its arrival lights a box rather than pushing the timeline down.
  *
- * On the NONE, CODE and RULE paths the explanation is already here when the page renders: it
- * travelled on the stream, computed the instant the outcome landed. Revealing it is not fast, it is
- * free. The audience switcher changes the rendering, never the fact set.
+ * The cause leads in English and keeps its symbol underneath. The switcher changes who is being
+ * spoken to, never the fact set: same evidence, three things to do about it.
  */
 export function ExplanationPanel({ explanation, debtOpen, onExplain, busy }: Props) {
   const [audience, setAudience] = useState<Audience>("merchant");
@@ -26,16 +36,19 @@ export function ExplanationPanel({ explanation, debtOpen, onExplain, busy }: Pro
         {debtOpen ? (
           <>
             <span className="dim">
-              Explanation owed. No response code and no rule accounted for this one.
+              An explanation is owed. No response code and no rule accounted for this one.
             </span>
             {onExplain ? (
               <button className="ask" onClick={onExplain} disabled={busy}>
-                {busy ? "asking the model…" : "ask why"}
+                {busy ? "asking the model…" : "Ask why"}
               </button>
             ) : null}
           </>
         ) : (
-          <span className="dim">Nothing owed. A payment that worked owes you no explanation.</span>
+          <span className="dim">
+            Nothing owed. This payment worked, so there is nothing to explain and it cost nothing to
+            say so.
+          </span>
         )}
       </section>
     );
@@ -52,49 +65,60 @@ export function ExplanationPanel({ explanation, debtOpen, onExplain, busy }: Pro
   return (
     <section className="explanation" data-testid="explanation">
       <div className="explanation-head">
-        <span className={`path path-${explanation.path}`}>{explanation.path}</span>
-        <span className="level">{explanation.level}</span>
-        {explanation.hypothesis ? <span className="hypothesis">HYPOTHESIS</span> : null}
-        {explanation.abstained ? <span className="abstained">CANNOT DETERMINE</span> : null}
+        <span className={`path path-${explanation.path}`} title={explanation.path}>
+          {label.path(explanation.path)}
+        </span>
+        {explanation.hypothesis ? (
+          <span className="hypothesis" title="Proposed, not established">
+            Hypothesis
+          </span>
+        ) : null}
+        {explanation.abstained ? <span className="abstained">Cannot determine</span> : null}
         {explanation.confidence != null ? (
           <span className="confidence">confidence {explanation.confidence.toFixed(2)}</span>
         ) : null}
         <span className="audiences">
           {AUDIENCES.map((a) => (
             <button
-              key={a}
-              className={`audience ${a === audience ? "on" : ""}`}
-              onClick={() => setAudience(a)}
+              key={a.id}
+              className={`audience ${a.id === audience ? "on" : ""}`}
+              title={a.hint}
+              onClick={() => setAudience(a.id)}
             >
-              {a}
+              {a.id}
             </button>
           ))}
         </span>
       </div>
 
-      <div className="root-cause">
-        {explanation.rootCause ?? "Cause not determinable from available evidence"}
-      </div>
+      <h3 className="root-cause">
+        {explanation.rootCause
+          ? label.cause(explanation.rootCause)
+          : "The cause cannot be determined from the available evidence"}
+      </h3>
+      {explanation.rootCause ? <div className="root-cause-symbol">{explanation.rootCause}</div> : null}
 
       <p className="rendering" data-audience={audience}>
-        {text ?? <span className="dim">No rendering at this level.</span>}
+        {text ? <Prose text={text} /> : <span className="dim">No rendering at this level.</span>}
       </p>
 
       <div className="citations">
         {explanation.rules.map((r) => (
-          <span key={r} className="citation rule">
-            rule:{r}
+          <span key={r} className="citation rule" title={r}>
+            {label.rule(r)}
           </span>
         ))}
         {citations.map((c) => (
-          <span key={c} className="citation">
-            {c}
+          <span key={c} className="citation" title={c}>
+            {label.citation(c)}
           </span>
         ))}
       </div>
       <div className="of">
-        fact set {explanation.factSetHash.slice(0, 16)}…
-        {explanation.promptVersion ? ` · ${explanation.promptVersion}` : " · no model was called"}
+        fact set {explanation.factSetHash.slice(0, 12)}…
+        {explanation.promptVersion
+          ? ` · ${explanation.promptVersion}`
+          : " · no model was called"}
       </div>
     </section>
   );

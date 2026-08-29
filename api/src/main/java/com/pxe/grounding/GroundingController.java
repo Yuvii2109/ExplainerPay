@@ -21,8 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * The grounding contract, exposed.
  *
- * <p>The probe runs a deliberately malformed response through the real validator — the same code
- * path a live generation takes — and returns the verdict. It exists because a safety rule visibly
+ * <p>The probe runs a deliberately malformed response through the real validator, the same code
+ * path and returns the verdict. It exists because a safety rule visibly
  * catching the model is worth more than any number of correct outputs, and a rule nobody can watch
  * fire is indistinguishable from a rule that does not exist.
  *

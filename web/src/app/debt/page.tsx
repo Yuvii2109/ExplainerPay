@@ -1,4 +1,5 @@
 import Link from "next/link";
+import * as label from "@/lib/labels";
 import { API, money } from "@/lib/pxe";
 
 export const dynamic = "force-dynamic";
@@ -62,10 +63,12 @@ export default async function DebtQueue() {
                     {money(o.amountMinor, o.currency)}
                   </td>
                   <td data-label="Tag">
-                    <span className={`tag tag-${o.tag}`}>{o.tag}</span>
+                    <span className={`tag tag-${o.tag}`} title={o.tag ?? ""}>
+                      {label.tag(o.tag)}
+                    </span>
                   </td>
-                  <td data-label="Code" className="dim mono">
-                    {o.responseCode ?? "—"}
+                  <td data-label="Code" className="dim" title={o.responseCode ?? ""}>
+                    {o.responseCode ? label.code(o.responseCode) : label.NONE}
                   </td>
                   <td data-label="Age" className="num">
                     {age(o.ageSeconds)}

@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
  *
  * <p>This class exists for one unglamorous reason: a bean calling its own {@code @Transactional}
  * method does not go through the proxy, so the annotation does nothing. When the pipeline invoked
- * itself, every repository call opened its own transaction and returned a fresh detached entity —
+ * itself, every repository call opened its own transaction and returned a fresh detached entity,
  * so the timeline held one Payment and the loop mutated another, and a template asking for the
  * resolved response code silently got nothing.
  *

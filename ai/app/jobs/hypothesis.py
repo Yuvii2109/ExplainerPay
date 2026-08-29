@@ -1,7 +1,7 @@
 """Job B. "Why did this happen?"
 
 The expensive, dangerous, interesting one. It runs only when no response code and no rule could
-account for a payment, and its output is a claim about causality rather than about wording — which
+account for a payment, and its output is a claim about causality rather than about wording, which
 is why it is the job that is allowed to abstain, and the one whose output is always marked.
 """
 

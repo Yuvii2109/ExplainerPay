@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pxe.admission.AdmissionControl;
 import com.pxe.deviation.DeviationDetection;
 import com.pxe.deviation.DeviationType;
+import com.pxe.grounding.AbstentionRenderer;
 import com.pxe.grounding.AudienceRenderer;
 import com.pxe.grounding.CauseTaxonomy;
 import com.pxe.grounding.Grounding;
@@ -54,6 +55,7 @@ public class ExplanationPipeline {
     private final AiClient ai;
     private final GroundingValidator grounding;
     private final AudienceRenderer renderer;
+    private final AbstentionRenderer abstention;
     private final CauseTaxonomy taxonomy;
 
     public ExplanationPipeline(PaymentRepository payments, ExplanationRepository explanations,
@@ -61,7 +63,8 @@ public class ExplanationPipeline {
                                OutcomeResolver outcomes, RuleCatalogue rules, ObjectMapper mapper,
                                AdmissionControl admission, ModelCallRepository modelCalls,
                                AiClient ai, GroundingValidator grounding,
-                               AudienceRenderer renderer, CauseTaxonomy taxonomy) {
+                               AudienceRenderer renderer, AbstentionRenderer abstention,
+                               CauseTaxonomy taxonomy) {
         this.payments = payments;
         this.explanations = explanations;
         this.ruleHits = ruleHits;
@@ -74,6 +77,7 @@ public class ExplanationPipeline {
         this.ai = ai;
         this.grounding = grounding;
         this.renderer = renderer;
+        this.abstention = abstention;
         this.taxonomy = taxonomy;
     }
 
@@ -234,11 +238,7 @@ public class ExplanationPipeline {
             return Optional.empty();
         }
 
-        // G8: if every FACT claim was dropped, do not render L4.
-        AiClient.NarrativeResult rendered = verdict.rendersNarrative() ? said : null;
-        if (said != null && rendered == null) {
-            log.warn("every fact claim for {} was dropped; falling back below L4", paymentId);
-        }
+        AudienceRenderer.Rendering shown = renderingFor(timeline, proposed, said, verdict);
 
         Explanation explanation = explanations.save(Explanation.fromModel(
                 paymentId,
@@ -247,11 +247,13 @@ public class ExplanationPipeline {
                 proposed.rootCause(),
                 proposed.determinable(),
                 proposed.confidence(),
-                json(verdict),
+                json(new StoredClaims(verdict.rejected(), verdict.kept(), verdict.dropped(),
+                        verdict.numbersRendered(), verdict.numbersMatchingTheLedger(),
+                        proposed.candidatesConsidered())),
                 json(citationsOf(proposed)),
-                rendered == null ? null : substitute(timeline, rendered.merchant(), rendered),
-                rendered == null ? null : substitute(timeline, rendered.support(), rendered),
-                rendered == null ? null : substitute(timeline, rendered.engineer(), rendered),
+                shown == null ? null : shown.merchant(),
+                shown == null ? null : shown.support(),
+                shown == null ? null : shown.engineer(),
                 at));
 
         payment.closeDebt(at);
@@ -285,11 +287,51 @@ public class ExplanationPipeline {
     }
 
     /**
+     * What the reader actually sees, in order of preference.
+     *
+     * <p>An abstention renders the absence: what we asked for, what came back, what did not, and
+     * which causes the evidence refuses to separate. It never depends on Job A, because the one
+     * screen that must always say something is the one where the system is admitting it does not
+     * know.
+     *
+     * <p>Otherwise Job A is used when its output survived the contract, and the validated claims
+     * are assembled into a rendering when it did not. G8 stops a narrative being written over
+     * dropped facts; it was never meant to leave the panel blank.
+     */
+    private AudienceRenderer.Rendering renderingFor(Timeline timeline,
+                                                    AiClient.HypothesisResult proposed,
+                                                    AiClient.NarrativeResult said,
+                                                    Grounding verdict) {
+        if (!proposed.determinable()) {
+            return abstention.render(timeline, proposed.candidatesConsidered()).orElse(null);
+        }
+        if (said != null && verdict.rendersNarrative()) {
+            return new AudienceRenderer.Rendering(
+                    substitute(timeline, said.merchant(), said),
+                    substitute(timeline, said.support(), said),
+                    substitute(timeline, said.engineer(), said));
+        }
+        log.warn("no usable narrative for {}; assembling one from the surviving claims",
+                timeline.payment().getId());
+        return renderer.fromClaims(proposed.rootCause(), verdict.kept()).orElse(null);
+    }
+
+    /**
      * G3 on the renderings. A slot the record cannot fill leaves the sentence without it rather
      * than leaving a brace on screen; the claims are where a failed substitution costs a claim.
      */
     private String substitute(Timeline timeline, String text, AiClient.NarrativeResult said) {
         return grounding.render(timeline, text, said.placeholders()).orElse(text);
+    }
+
+    /**
+     * What is kept in the claims column: the verdict, plus the causes the model weighed and could
+     * not separate. The eval harness reads groundedness and numeric fidelity off the same object.
+     */
+    private record StoredClaims(boolean rejected, List<Grounding.Claim> kept,
+                                List<Grounding.Dropped> dropped, int numbersRendered,
+                                int numbersMatchingTheLedger,
+                                List<AiClient.Candidate> candidatesConsidered) {
     }
 
     private List<String> citationsOf(AiClient.HypothesisResult proposed) {

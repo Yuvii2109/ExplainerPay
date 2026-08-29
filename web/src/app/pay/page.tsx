@@ -1,4 +1,5 @@
 import Link from "next/link";
+import * as label from "@/lib/labels";
 import { API, money, type Header } from "@/lib/pxe";
 
 export const dynamic = "force-dynamic";
@@ -48,17 +49,19 @@ export default async function Pay() {
                 <td data-label="Payment" className="mono">
                   {p.paymentId}
                 </td>
-                <td data-label="Rail" className="dim mono">
-                  {p.rail}
+                <td data-label="Rail" className="dim" title={p.rail}>
+                  {label.rail(p.rail)}
                 </td>
                 <td data-label="Amount" className="num">
                   {money(p.amountMinor, p.currency)}
                 </td>
                 <td data-label="Tag">
-                  <span className={`tag tag-${p.tag}`}>{p.tag}</span>
+                  <span className={`tag tag-${p.tag}`} title={p.tag ?? ""}>
+                    {label.tag(p.tag)}
+                  </span>
                 </td>
-                <td data-label="Code" className="dim mono">
-                  {p.responseCode ?? "—"}
+                <td data-label="Code" className="dim" title={p.responseCode ?? ""}>
+                  {p.responseCode ? label.code(p.responseCode) : label.NONE}
                 </td>
                 <td data-label="Debt" className={p.debtOpen ? "NOT_MET" : "dim"}>
                   {p.debtOpen ? "open" : p.debtOpenedAt ? "paid" : "none"}

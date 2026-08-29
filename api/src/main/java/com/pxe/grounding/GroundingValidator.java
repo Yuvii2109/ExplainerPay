@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
  *
  * <p>Groundedness is enforced here rather than hoped for. Two kinds of failure: a claim that cannot
  * be supported is <em>dropped</em>, and a response that breaks the protocol is <em>rejected</em>
- * whole. G4 is the second kind, and it is the one to dwell on — a literal digit is not a content
+ * whole. G4 is the second kind, and it is the one to dwell on: a literal digit is not a content
  * error, it is the model doing something it was structurally forbidden from doing.
  */
 @Component

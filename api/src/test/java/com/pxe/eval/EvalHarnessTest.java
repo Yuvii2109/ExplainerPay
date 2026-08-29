@@ -14,7 +14,7 @@ import org.springframework.test.context.ActiveProfiles;
 /**
  * The harness itself: its shape, its denominators and its refusal to conflate two kinds of zero.
  *
- * <p>Phase 3's exit criterion — every metric zero because nothing explains yet — was demonstrated
+ * <p>Phase 3's exit criterion, every metric zero because nothing explains yet, was demonstrated
  * when nothing had run at all. It is not restorable now: once outcomes are resolved, the two clean
  * successes are deterministically covered whether or not any explanation exists, which is the
  * correct answer and not a regression. What remains testable is everything below.

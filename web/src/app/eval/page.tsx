@@ -32,6 +32,8 @@ type EvalReport = {
   rows: Row[];
 };
 
+import * as label from "@/lib/labels";
+
 const API = process.env.PXE_API_URL ?? "http://localhost:18080";
 
 function show(metric: Metric) {
@@ -41,7 +43,7 @@ function show(metric: Metric) {
   return `${(metric.value * 100).toFixed(1)}%`;
 }
 
-function label(status: Status) {
+function statusText(status: Status) {
   return status === "NOT_MEASURED" ? "not measured" : status === "MET" ? "met" : "not met";
 }
 
@@ -95,7 +97,7 @@ export default async function Eval() {
                   {m.enforcement}
                 </td>
                 <td data-label="Status" className={m.status}>
-                  {label(m.status)}
+                  {statusText(m.status)}
                 </td>
               </tr>
             ))}
@@ -127,32 +129,28 @@ export default async function Eval() {
                 <td data-label="Payment" className="mono">
                   {r.paymentId}
                 </td>
-                <td data-label="Expected" className="mono">
-                  {r.expectedPath}
+                <td data-label="Expected" title={r.expectedPath}>
+                  {label.path(r.expectedPath)}
                 </td>
                 <td
                   data-label="Actual"
-                  className={
-                    "mono " +
-                    (r.actualPath === null ? "dim" : r.pathAsExpected ? "MET" : "NOT_MET")
-                  }
+                  title={r.actualPath ?? ""}
+                  className={r.actualPath === null ? "dim" : r.pathAsExpected ? "MET" : "NOT_MET"}
                 >
-                  {r.actualPath ?? "not produced"}
+                  {r.actualPath ? label.path(r.actualPath) : "not produced"}
                 </td>
                 <td data-label="Model calls" className="num">
                   {r.modelCalls}
                 </td>
-                <td data-label="Injected cause" className="dim mono">
-                  {r.injectedCause ?? "—"}
+                <td data-label="Injected cause" className="dim" title={r.injectedCause ?? ""}>
+                  {r.injectedCause ? label.cause(r.injectedCause) : label.NONE}
                 </td>
                 <td
                   data-label="Named cause"
-                  className={
-                    "mono " +
-                    (r.namedCause === null ? "dim" : r.causeCorrect ? "MET" : "NOT_MET")
-                  }
+                  title={r.namedCause ?? ""}
+                  className={r.namedCause === null ? "dim" : r.causeCorrect ? "MET" : "NOT_MET"}
                 >
-                  {r.namedCause ?? "—"}
+                  {r.namedCause ? label.cause(r.namedCause) : label.NONE}
                 </td>
               </tr>
             ))}

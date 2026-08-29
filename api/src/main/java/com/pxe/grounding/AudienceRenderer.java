@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pxe.timeline.Timeline;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Pattern;
@@ -23,8 +25,8 @@ import org.springframework.stereotype.Component;
  * the number is substituted here from the record.
  *
  * <p>They differ in what the reader must do, not in tone. The support rendering carries the
- * instruction the other two do not — check for a duplicate payment, give the reversal window, do
- * not promise a refund — because audience rendering is about action.
+ * instruction the other two do not (check for a duplicate payment, give the reversal window, do
+ * not promise a refund) because audience rendering is about action.
  */
 @Component
 public class AudienceRenderer {
@@ -78,6 +80,45 @@ public class AudienceRenderer {
             return Optional.empty();
         }
         return Optional.of(new Rendering(merchant.get(), support.get(), engineer.get()));
+    }
+
+    /**
+     * A rendering assembled from the claims that survived the contract.
+     *
+     * <p>Used when Job A produced nothing usable: it was rejected, or every fact it leaned on was
+     * dropped. The claims have already been validated and had their placeholders substituted, so
+     * this says only things the record supports. It reads flatter than a written narrative, and
+     * that is the correct trade: a blank panel tells the reader nothing at all.
+     */
+    public Optional<Rendering> fromClaims(String rootCause, List<Grounding.Claim> kept) {
+        if (kept.isEmpty()) {
+            return Optional.empty();
+        }
+        String facts = join(kept, "FACT");
+        String proposals = join(kept, "HYPOTHESIS");
+        String cause = rootCause == null ? "no cause could be named"
+                : "the proposed cause is " + rootCause.replace('_', ' ').toLowerCase(Locale.UK);
+
+        String merchant = facts.isBlank()
+                ? "We are still working out what happened to this payment."
+                : facts + " We are still confirming why.";
+        String support = (facts.isBlank() ? "" : facts + " ")
+                + "Proposed rather than confirmed: " + cause + "."
+                + (proposals.isBlank() ? "" : " " + proposals)
+                + " Do not present this to the customer as a finding.";
+        String engineer = (facts + " " + proposals).trim()
+                + " Job A produced no usable rendering, so this is assembled from the claims that "
+                + "passed the grounding contract.";
+
+        return Optional.of(new Rendering(merchant, support, engineer));
+    }
+
+    private String join(List<Grounding.Claim> claims, String kind) {
+        return claims.stream()
+                .filter(c -> kind.equals(c.kind()))
+                .map(Grounding.Claim::text)
+                .reduce((a, b) -> a + " " + b)
+                .orElse("");
     }
 
     private Optional<String> fill(String template, Map<String, String> slots) {

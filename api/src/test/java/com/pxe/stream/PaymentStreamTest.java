@@ -171,6 +171,21 @@ class PaymentStreamTest {
     }
 
     @Test
+    void askingWhyAnswersInTheShapeTheScreenRenders() throws Exception {
+        // The explain route once answered with a narrower record that carried no audience text, so
+        // an explanation reached the panel with prose the pipeline had just written stripped out of
+        // it, and the screen said "no rendering at this level" until the page was reloaded. One
+        // shape for one concept is the fix, and this is the guard on it.
+        assertThat(com.pxe.explain.ExplanationController.class
+                .getMethod("explain", String.class)
+                .getGenericReturnType().getTypeName())
+                .as("asking why must answer with the same payment shape the screen already renders")
+                .isEqualTo(PaymentStreamController.class
+                        .getMethod("snapshot", String.class)
+                        .getGenericReturnType().getTypeName());
+    }
+
+    @Test
     void theCountersReportADebtAndNoTokens() throws Exception {
         HttpResponse<String> response = HttpClient.newHttpClient().send(
                 HttpRequest.newBuilder()

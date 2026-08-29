@@ -21,8 +21,8 @@ import org.springframework.test.context.ActiveProfiles;
 /**
  * The model path, with the model stubbed.
  *
- * <p>Deliberately no live call. What is being tested is the contract around the model — admission,
- * marking, cost accounting, and what survives when a generation is thrown away — none of which
+ * <p>Deliberately no live call. What is being tested is the contract around the model: admission,
+ * marking, cost accounting, and what survives when a generation is thrown away, none of which
  * should depend on a network or on a provider being in a good mood.
  */
 @SpringBootTest
@@ -112,10 +112,21 @@ class ModelPathTest {
                 .as("cannot be determined is preferred to a plausible guess")
                 .isNull();
         assertThat(explanation.getConfidence()).isNull();
+
+        // Section 19: naming the missing thing precisely IS the answer. An abstention that
+        // renders nothing has named nothing, and it is the one screen that must always speak.
+        assertThat(explanation.getMerchantText()).isNotNull();
+        assertThat(explanation.getSupportText())
+                .contains("We genuinely do not know the cause")
+                .contains("Do NOT offer the merchant a reason");
+        assertThat(explanation.getEngineerText())
+                .contains("PAYOUT_CREDITED is absent")
+                .contains("71 hours past a 6 hour window")
+                .contains("Any confident attribution here is a false attribution");
     }
 
     @Test
-    void aRejectedRenderingCostsTheWordingAndNotTheAttribution() {
+    void aRejectedRenderingCostsJobAWordingButStillTellsTheReaderSomething() {
         given(ai.hypothesis(any(), anyString(), any(), any()))
                 .willReturn(proposing("MDR_FEE_APPLIED_TWICE_IN_BATCH", 0.71));
         willThrow(new AiClient.Rejected("a claim may not contain a literal digit"))
@@ -126,8 +137,17 @@ class ModelPathTest {
 
         Explanation explanation = explanations.findByPaymentId("PXE-012").orElseThrow();
         assertThat(explanation.getRootCause()).isEqualTo("MDR_FEE_APPLIED_TWICE_IN_BATCH");
-        assertThat(explanation.getMerchantText()).isNull();
         assertThat(explanation.getPromptVersion()).endsWith("+rejected");
+
+        // The wording is lost; the reader is not left with an empty panel. What survives is
+        // assembled from the claims that passed the contract, so it says only supported things.
+        assertThat(explanation.getMerchantText()).isNotNull();
+        assertThat(explanation.getEngineerText())
+                .contains("The switch lost state.")
+                .contains("assembled from the claims");
+        assertThat(explanation.getSupportText())
+                .as("a proposal must never be presented as a finding")
+                .contains("Proposed rather than confirmed");
 
         assertThat(modelCalls.findByPaymentId("PXE-012"))
                 .filteredOn(c -> "SYNTHESIS".equals(c.getJob()))

@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
  * Section 7, step 7. Is this payment worth a model call?
  *
  * <p>Sending millions of payments a day to a model is economically absurd and operationally
- * unauditable. Being able to say precisely which ones were sent, and why, is the interesting part —
+ * unauditable. Being able to say precisely which ones were sent, and why, is the interesting part,
  * so a refusal is recorded as carefully as an admission.
  *
  * <p>Everything cheaper has already run by the time this is asked: the response code, then the rule

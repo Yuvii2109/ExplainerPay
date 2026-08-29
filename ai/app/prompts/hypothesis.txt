@@ -70,7 +70,7 @@ are about to cite and check that they support your cause rather than merely surr
 
 SECOND, what would tell this cause apart from the others? Name that evidence to yourself. If the
 evidence that would distinguish your cause from the next-best one is an event that is simply not in
-the record — a message nobody sent, a status nobody reported — then the record does not separate
+the record (a message nobody sent, a status nobody reported) then the record does not separate
 them and you must choose UNDETERMINED. An absence is not evidence for whichever cause you find most
 plausible. It is the reason you cannot choose between them.
 

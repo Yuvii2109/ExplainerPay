@@ -28,7 +28,7 @@ const PROBES = ["G4", "G1", "G3", "G6", "G9"];
  * payload on screen.
  *
  * A safety rule visibly catching the model is worth more than any number of correct outputs. This
- * is the same validator a live generation goes through — nothing here is a simulation of the rule,
+ * is the same validator a live generation goes through. Nothing here is a simulation of the rule,
  * it is the rule.
  */
 export function GroundingScreen() {

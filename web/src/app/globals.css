@@ -1,4 +1,4 @@
-/* Payment Explainability Engine — console.
+/* Payment Explainability Engine, console styles.
  *
  * Two rules hold the visual design together: monospace is for things you would copy and paste
  * (ids, codes, stages, references, amounts), and prose is prose. Setting an explanation in mono
@@ -452,11 +452,23 @@ button:disabled {
   border-color: var(--faint);
 }
 
+/* The cause leads in English; the symbol sits under it for whoever needs to grep for it. */
 .root-cause {
-  font-family: var(--mono);
-  font-size: 15px;
+  font-family: var(--sans);
+  font-size: clamp(17px, 1.9vw, 20px);
   font-weight: 600;
-  margin: 14px 0 10px;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  margin: 16px 0 4px;
+  max-width: 62ch;
+}
+
+.root-cause-symbol {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--faint);
+  letter-spacing: 0.02em;
+  margin-bottom: 12px;
   word-break: break-word;
 }
 
@@ -772,4 +784,18 @@ pre.payload {
   .replay {
     margin-left: 0;
   }
+}
+
+/* A symbol inside prose is a reference, not a shout. Small, monospace, faintly boxed, with its
+   English on hover, so the engineer rendering reads as written rather than as pasted. */
+.symbol {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  color: var(--muted);
+  background: var(--raised);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 1px 5px;
+  white-space: nowrap;
+  cursor: help;
 }

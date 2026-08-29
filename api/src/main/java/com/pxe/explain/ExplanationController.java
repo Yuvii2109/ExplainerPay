@@ -1,6 +1,7 @@
 package com.pxe.explain;
 
 import com.pxe.model.PaymentRepository;
+import com.pxe.stream.PaymentView;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -20,13 +21,16 @@ public class ExplanationController {
     private final ExplanationRepository explanations;
     private final RuleHitRepository ruleHits;
     private final ExplanationPipeline pipeline;
+    private final PaymentView view;
 
     public ExplanationController(PaymentRepository payments, ExplanationRepository explanations,
-                                 RuleHitRepository ruleHits, ExplanationPipeline pipeline) {
+                                 RuleHitRepository ruleHits, ExplanationPipeline pipeline,
+                                 PaymentView view) {
         this.payments = payments;
         this.explanations = explanations;
         this.ruleHits = ruleHits;
         this.pipeline = pipeline;
+        this.view = view;
     }
 
     @GetMapping("/payments/{id}/explanation")
@@ -56,7 +60,7 @@ public class ExplanationController {
      * with an invented one.
      */
     @PostMapping("/payments/{id}/explain")
-    public ResponseEntity<Explained> explain(@PathVariable String id) {
+    public ResponseEntity<PaymentView.Snapshot> explain(@PathVariable String id) {
         if (payments.findById(id).isEmpty()) {
             return ResponseEntity.notFound().build();
         }
@@ -70,7 +74,10 @@ public class ExplanationController {
         } catch (AiClient.Unavailable e) {
             return ResponseEntity.status(503).build();
         }
-        return forPayment(id);
+        // The whole payment, in the shape the screen already renders. Answering with a narrower
+        // record was how an explanation reached the panel carrying no prose: the screen showed
+        // "no rendering at this level" for text the pipeline had in fact just written.
+        return view.of(id).map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     /**

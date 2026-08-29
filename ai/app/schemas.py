@@ -67,7 +67,7 @@ class Candidate(Wire):
 
 
 class HypothesisResult(Wire):
-    """Job B. A candidate cause, marked, cited — or an honest refusal to name one."""
+    """Job B. A candidate cause, marked, cited, or an honest refusal to name one."""
 
     determinable: bool
     root_cause: str | None = None

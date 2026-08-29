@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { Live } from "@/components/Live";
 import { Widgets } from "@/components/Widgets";
 
 import "./globals.css";
@@ -25,6 +26,7 @@ export default function RootLayout({
           </nav>
           <Widgets />
         </header>
+        <Live />
         {children}
       </body>
     </html>

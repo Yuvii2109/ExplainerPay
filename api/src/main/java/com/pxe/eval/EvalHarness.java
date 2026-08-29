@@ -25,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
  * measurable rather than a matter of feel.
  *
  * <p>It compares the explanations in the database against ground truth read from the dataset file.
- * Before phase 4 there are no explanations, so it reports zeros — and reports each denominator
+ * Before phase 4 there are no explanations, so it reports zeros, and reports each denominator
  * beside them, because a zero over an empty denominator means nothing has been measured and a zero
  * over a full one means the system is failing.
  */

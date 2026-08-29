@@ -3,7 +3,6 @@ package com.pxe.grounding;
 import com.pxe.model.PaymentHop;
 import com.pxe.model.PaymentReference;
 import com.pxe.timeline.Timeline;
-import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
@@ -17,7 +16,7 @@ import java.util.Optional;
  * <p>The deterministic paths render from templates, not from a model, but they obey the same rule:
  * the template writes {@code {capturedAmount}} and never a number. Every slot is resolved from the
  * record here, so a rendered figure on the CODE and RULE paths is as traceable as one the validator
- * substituted on the MODEL path — and just as impossible to mistype.
+ * substituted on the MODEL path, and just as impossible to mistype.
  *
  * <p>Slots are semantic rather than positional. A template cannot say {@code hops[3]} because the
  * same cause appears at different positions in different payments.
@@ -122,10 +121,5 @@ public final class Slots {
         if (value != null) {
             slots.put(name, value);
         }
-    }
-
-    /** Unused, but it keeps the formatter honest about what a stamp looks like. */
-    static String stamp(Instant instant) {
-        return DATE.format(instant) + " " + TIME.format(instant);
     }
 }

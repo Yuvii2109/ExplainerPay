@@ -1,4 +1,4 @@
-# PXE — context
+# PXE, context
 
 The single context file for this repository. Architecture, routes, schema and decisions.
 It is not a changelog and it is not a copy of the reference document.
@@ -17,9 +17,9 @@ ExplainerPay/
 ├── .env.example                POSTGRES_*, GEMINI_API_KEY
 ├── context.md                  this file
 ├── planner/                    the reference document
-├── api/                        pxe-api — Java 21, Spring Boot 3.3.5, ONE Maven module
-├── ai/                         pxe-ai  — Python 3.12, FastAPI
-├── web/                        pxe-web — Next.js 15, React 19, TypeScript
+├── api/                        pxe-api, Java 21, Spring Boot 3.3.5, ONE Maven module
+├── ai/                         pxe-ai , Python 3.12, FastAPI
+├── web/                        pxe-web, Next.js 15, React 19, TypeScript
 └── data/                       (phase 1) payment-scenarios.json, expectations.json
 ```
 
@@ -27,13 +27,13 @@ ExplainerPay/
 
 | Service | Host port | Container port | Health | Holds DB credentials |
 | --- | --- | --- | --- | --- |
-| `postgres` | 15432 | 5432 | `pg_isready` | — |
+| `postgres` | 15432 | 5432 | `pg_isready` |, |
 | `pxe-api` | 18080 | 8080 | `GET /actuator/health` (includes the `db` component) | yes |
 | `pxe-ai` | 18000 | 8000 | `GET /health` | **no, by construction** |
 | `pxe-web` | 13000 | 3000 | `GET /` | no |
 
 Published host ports are shifted off the defaults and overridable via `PXE_PORT_*`, because
-unrelated projects commonly hold 5432/8080/8000/3000 — one on this machine does. Container-internal
+unrelated projects commonly hold 5432/8080/8000/3000, one on this machine does. Container-internal
 ports are standard, so nothing inside the network is affected.
 
 Four containers is the complexity budget. There is no broker, no Temporal, no Redis and no
@@ -47,28 +47,28 @@ that *"the model has no database connection"* is verifiable by reading `docker-c
 | `GET /actuator/health` | pxe-api | 0 |
 | `GET /health` | pxe-ai | 0 |
 | `GET /` | pxe-web | 0 (placeholder; becomes a redirect to `/pay`) |
-| `GET /api/scenarios/report` | pxe-api | 1 — what landed in the database, read back from it |
-| `GET /api/deviations/report` | pxe-api | 2 — the computed L2 set for every payment |
+| `GET /api/scenarios/report` | pxe-api | 1, what landed in the database, read back from it |
+| `GET /api/deviations/report` | pxe-api | 2, the computed L2 set for every payment |
 | `GET /api/payments/{id}/deviations` | pxe-api | 2 |
-| `GET /api/eval` | pxe-api | 3 — runs the golden set and reports the eight metrics |
-| `/eval` | pxe-web | 3 — the harness screen, demo beat 12 |
-| `GET /api/payments/{id}/explanation` | pxe-api | 4 — the L3 attribution, its citations and its rule |
-| `GET /api/debt` | pxe-api | 4 — the queue, sorted by exposure |
-| `GET /api/payments` | pxe-api | 5 — the scenario selector |
-| `GET /api/payments/{id}` | pxe-api | 5 — the whole payment at once |
-| `GET /api/payments/{id}/stream` | pxe-api | 5 — SSE, one frame per hop |
-| `GET /api/counters` | pxe-api | 5 — the two widgets |
+| `GET /api/eval` | pxe-api | 3, runs the golden set and reports the eight metrics |
+| `/eval` | pxe-web | 3, the harness screen, demo beat 12 |
+| `GET /api/payments/{id}/explanation` | pxe-api | 4, the L3 attribution, its citations and its rule |
+| `GET /api/debt` | pxe-api | 4, the queue, sorted by exposure |
+| `GET /api/payments` | pxe-api | 5, the scenario selector |
+| `GET /api/payments/{id}` | pxe-api | 5, the whole payment at once |
+| `GET /api/payments/{id}/stream` | pxe-api | 5, SSE, one frame per hop |
+| `GET /api/counters` | pxe-api | 5, the two widgets |
 | `/pay`, `/payment/[id]`, `/debt` | pxe-web | 5 |
-| `GET /api/health` | pxe-web | 5 — static, so the web container never depends on pxe-api to be healthy |
-| `POST /api/payments/{id}/explain` | pxe-api | 6 — the only route that can spend a token |
-| `GET /health`, `/prompts` | pxe-ai | 6 — the frozen prompt versions |
-| `POST /jobs/hypothesis`, `/jobs/synthesis` | pxe-ai | 6 — Job B and Job A |
-| `GET /api/grounding/rules` | pxe-api | 7 — G1 to G9 |
-| `POST /api/grounding/probe/{id}/{rule}` | pxe-api | 7 — a malformed response through the real validator |
-| `GET /api/grounding/rejections` | pxe-api | 7 — the rejection log |
-| `/grounding` | pxe-web | 7 — beat 10 |
+| `GET /api/health` | pxe-web | 5, static, so the web container never depends on pxe-api to be healthy |
+| `POST /api/payments/{id}/explain` | pxe-api | 6, the only route that can spend a token |
+| `GET /health`, `/prompts` | pxe-ai | 6, the frozen prompt versions |
+| `POST /jobs/hypothesis`, `/jobs/synthesis` | pxe-ai | 6, Job B and Job A |
+| `GET /api/grounding/rules` | pxe-api | 7, G1 to G9 |
+| `POST /api/grounding/probe/{id}/{rule}` | pxe-api | 7, a malformed response through the real validator |
+| `GET /api/grounding/rejections` | pxe-api | 7, the rejection log |
+| `/grounding` | pxe-web | 7, beat 10 |
 
-The four screens of reference section 18 — `/pay`, `/payment/[id]`, `/debt`, `/eval` — arrive in
+The four screens of reference section 18, `/pay`, `/payment/[id]`, `/debt`, `/eval`, arrive in
 phases 3 and 5.
 
 ## Schema
@@ -77,13 +77,13 @@ phases 3 and 5.
 
 Phase 1 loads **L0 only**: payment identity and the hop sequence, with references derived from the
 hops. `payments.tag`, `response_code`, `terminal_at` and the three `debt_*` columns exist in the
-table and are deliberately unmapped on the `Payment` entity — they are derived from hops by later
+table and are deliberately unmapped on the `Payment` entity: they are derived from hops by later
 phases, not loaded. `expected`, `explanation`, `injectedCause` and `demoNote` are golden data and
 are **never written to the database**, so nothing downstream of ingestion can reach ground truth by
 querying. The eval harness reads them from the file.
 
 Derived on load: `payment_references` rows come from hops carrying a `reference`, and
-`superseded_by` links the next reference of the same kind **only when its value differs** — PXE-006
+`superseded_by` links the next reference of the same kind **only when its value differs**, PXE-006
 links its two RRNs, PXE-009 repeats one UTR and links nothing. Hop fields outside the typed columns
 land in `attrs`, which is asserted by test, so a field added to the dataset is carried rather than
 dropped.
@@ -95,13 +95,13 @@ record.
 
 Phase 4 adds **L3**: `explanations` (path, root cause, citations, fact-set hash), `rule_hits`, and
 the resolved outcome and debt columns on `payments`. `tag` and `response_code` are **derived from
-the hops**, never loaded — `expected.tag` in the dataset is golden data the pipeline has to reach on
+the hops**, never loaded, `expected.tag` in the dataset is golden data the pipeline has to reach on
 its own. The three audience texts stay null: L3 is a cause with citations, L4 is the wording, and
 the renderers arrive with the phase that owns them.
 
 Phase 3 adds no rows to any table. It reads: `explanations` and `model_calls` are mapped on their
-**read** surface only, being the fields the harness evaluates. The write surface — `level`,
-`prompt_version`, `generated_at` and the three audience texts — is mapped by the phase that first
+**read** surface only, being the fields the harness evaluates. The write surface, `level`,
+`prompt_version`, `generated_at` and the three audience texts, is mapped by the phase that first
 produces an explanation.
 
 Phase 5 adds no tables. It adds the console and the stream: `data/rail-sequences.json` supplies the
@@ -109,7 +109,7 @@ per-rail happy path that pre-reserves the layout, and the SSE endpoint replays a
 `skeleton` → `hop`* → `outcome` → `explanation`? → `done`.
 
 Phase 6 adds the model path: `explanations` rows with path `MODEL` or `ABSTAIN` at L4, and
-`model_calls` rows for every call **including the refused ones** — an admission decision that says
+`model_calls` rows for every call **including the refused ones**: an admission decision that says
 no is the interesting half of the funnel and cannot be inferred from a counter that only counts
 spending.
 
@@ -123,9 +123,9 @@ deterministic paths render all three audiences without a model.
 `payment_references`, `ledger_entries`, `deviations`, `explanations`, `rule_hits`, `model_calls`.
 Two indexes carry meaning rather than performance:
 
-- `payments_debt_queue_idx` on `(debt_open, amount_minor desc)` — the debt queue is a query, not
+- `payments_debt_queue_idx` on `(debt_open, amount_minor desc)`: the debt queue is a query, not
   a table and not a service.
-- `explanations_fact_set_idx`, unique on `(payment_id, fact_set_hash)` — section 16's
+- `explanations_fact_set_idx`, unique on `(payment_id, fact_set_hash)`, section 16's
   content-addressed cache expressed as a constraint, so a re-generation is a constraint
   violation rather than a convention nobody enforces.
 
@@ -141,7 +141,7 @@ document first:
   2's exit criterion was unreachable. The dataset's own `cutoffAt` is `18:00:00.000Z`, so 18:00
   was always meant as UTC. Now UTC, and exactly one scenario (PXE-007) is late, matching the
   declared deviation sets. Section 9 also now states that `T+N` counts from the
-  `SETTLEMENT_SCHEDULED` hop and that there is no working-day calendar — PXE-007 settles on a
+  `SETTLEMENT_SCHEDULED` hop and that there is no working-day calendar, PXE-007 settles on a
   Sunday and PXE-012 on a Saturday.
 - **B.** Section 13 said Job A runs on *every explained payment*, which contradicts section 7's
   pipeline branch, section 17.4's precomputation, phase 4's "zero model calls" criterion and demo
@@ -160,7 +160,7 @@ document first:
 
 Other decisions:
 
-- **`payments.id` is the natural key** — `PXE-006` for a loaded scenario, generated for a live QR
+- **`payments.id` is the natural key**, `PXE-006` for a loaded scenario, generated for a live QR
   payment. Legible URLs and legible eval output.
 - **`stage`, `status`, `actor`, `rail` are `text`, not enums.** 52 constants across four
   vocabularies; nothing before phase 4 switches on them.
@@ -170,6 +170,35 @@ Other decisions:
 - **`pxe-web` runs `next dev`** in the container for now. Phase 5 needs a production build to
   measure the section 17.7 budgets.
 - **Published ports are shifted and overridable** (`PXE_PORT_POSTGRES`, `_API`, `_AI`, `_WEB`).
+- **One shape for one concept.** `POST /explain` answered with a narrower record than the screen
+  renders, one carrying no audience text, so an explanation arrived at the panel with the prose the
+  pipeline had just written stripped out of it and the screen read "no rendering at this level"
+  until the page was reloaded. It now answers with the same payment snapshot as
+  `GET /api/payments/{id}`, so the tag, the deviations, the debt and the three renderings all move
+  together. A test asserts the two return types stay identical.
+- **The console calls the API cross-origin, so pxe-api sends CORS headers** (`PXE_CORS_ORIGINS`).
+  Without them an EventSource fails on open and reports nothing useful: the page showed a finished
+  stream with an empty timeline, which reads as a backend that returned no hops rather than a
+  browser that was never allowed to ask. The `ask why` POST was blocked the same way.
+- **A failed stream falls back to the record.** The page is already server-rendered with the whole
+  payment; letting an unopened stream blank it out was the bug behind the empty timeline.
+- **An abstention renders the absence.** G8 stops a narrative being written over dropped facts; it
+  was never meant to leave the panel blank, and it did, on PXE-014, the single most revealing
+  screen in the demo. `AbstentionRenderer` builds the three audiences from the record: what we
+  asked for, what came back, what did not, how long it has been, and which causes the evidence
+  refuses to separate. It never depends on Job A, because the one screen that must always speak is
+  the one where the system is admitting it does not know.
+- **A rejected Job A still renders**, from the claims that passed the contract. Losing the wording
+  is correct; showing the reader an empty panel is not.
+- **Internal symbols are not what a reader reads.** `web/src/lib/labels.ts` maps every closed
+  vocabulary, causes, deviations, tags, rails, stages, actors, paths, rules, to English, with a
+  fallback that de-shouts any symbol nobody has written a label for, so adding a cause never leaves
+  a hole in the interface. The symbol stays: on the cause it sits under the English title, and
+  everywhere else it is the `title` attribute. `MDR_FEE_APPLIED_TWICE_IN_BATCH` is the right thing
+  to store, cite and test against, and the wrong thing to show a merchant.
+- **Prose is prose.** The console set everything in monospace, which made an explanation look like a
+  log line: the opposite of the point of the product. Mono is now reserved for what you would copy
+  and paste; the audience renderings are set in the body face.
 - **A digit inside a placeholder is not a literal number.** `{amount_1}` is a slot; checking the
   raw string would have rejected the exact convention the prompt teaches. G4 masks placeholders
   before looking for digits, on both sides of the boundary.
@@ -222,7 +251,7 @@ Other decisions:
   zero by construction.
 - **CLS is zero by construction, not by measurement.** No browser measures it; there is no
   Playwright. What is enforced is `npm run check:budgets`, which fails the build if a `@keyframes`
-  or `transition` names width, height, top, left, margin or padding — the section 17.6 rule, as a
+  or `transition` names width, height, top, left, margin or padding, the section 17.6 rule, as a
   check rather than a comment.
 - **Hops are paced (`pxe.stream.hop-delay-ms`, 320ms), not replayed at recorded intervals.**
   PXE-007 spans nine days. The wait is still the content, compressed to demo tempo.
@@ -234,7 +263,7 @@ Other decisions:
 - **The response code recorded on a payment is the code of the hop that decided its tag.** PXE-006
   reports U30 rather than the 00 of the retry that followed: the timeout is what made it a deemed
   success, and the later success does not erase how it got there.
-- **Rules are tried in order, first match wins, and no two overlap on any scenario** — asserted by
+- **Rules are tried in order, first match wins, and no two overlap on any scenario**, asserted by
   test, so the ordering is a tie-break that is never used rather than a hidden priority.
 - **The fact-set hash covers L0 and L2 only.** No root cause, no path, no text: the hash identifies
   the question, not the answer, or the cache would miss every time the answer changed.
@@ -280,7 +309,7 @@ turned out to be a real distinction rather than a duplication.
 - The golden `merchant` / `support` / `engineer` texts are post-substitution renderings, not model
   output. Section 15 does not say so, and a harness built on the wrong reading fails G4 against
   its own golden set.
-- Demo beat 10 has the model typing `18,400`, which is PXE-006 — a `RULE` scenario that never
+- Demo beat 10 has the model typing `18,400`, which is PXE-006: a `RULE` scenario that never
   reaches a model.
 - The demo in section 23 is ten minutes (2+4+4) and the submission is five.
 - **The model is not reproducible across fresh runs.** Temperature is zero and the response is
@@ -303,12 +332,12 @@ criterion before the next begins.
 
 | Phase | State |
 | --- | --- |
-| **0. Skeleton** | done — four healthy containers in 11.5s, V1 applied, 8 tables |
-| **1. Model and loader** | done — 15 payments, 79 hops, 16 references; 5 tests green |
-| **2. Timeline and expectations** | done — 16 detectors, computed set equals declared on 15/15 |
-| **3. Eval harness** | done — eight metrics, all zero, `/eval` renders |
-| **4. Code and rule paths** | done — coverage 12/15, 2 by code, 8 by rule, 0 tokens |
-| **5. Console and stream** | done — SSE, four screens, skeleton reserved, budget check green |
-| **6. AI service** | done — PXE-011 and PXE-012 produce hypotheses, PXE-014 abstains |
-| **7. Grounding validator** | done — G1 to G9, substitution, rejection log, beat 10 |
-| **8. Abstention and renderings** | done — PXE-014 abstains, three audiences, absent node |
+| **0. Skeleton** | done, four healthy containers in 11.5s, V1 applied, 8 tables |
+| **1. Model and loader** | done, 15 payments, 79 hops, 16 references; 5 tests green |
+| **2. Timeline and expectations** | done, 16 detectors, computed set equals declared on 15/15 |
+| **3. Eval harness** | done, eight metrics, all zero, `/eval` renders |
+| **4. Code and rule paths** | done, coverage 12/15, 2 by code, 8 by rule, 0 tokens |
+| **5. Console and stream** | done, SSE, four screens, skeleton reserved, budget check green |
+| **6. AI service** | done, PXE-011 and PXE-012 produce hypotheses, PXE-014 abstains |
+| **7. Grounding validator** | done, G1 to G9, substitution, rejection log, beat 10 |
+| **8. Abstention and renderings** | done, PXE-014 abstains, three audiences, absent node |

@@ -21,7 +21,7 @@
   },
   "RRN_MUTATION_ON_RETRY": {
     "merchant": "Your money is not lost. The first attempt timed out at the payment network and the automatic retry went through, but under a new reference number. Our settlement run picks payments up by their original reference, so this one was skipped rather than rejected. It is captured, it is owed to you, and it will be released once the reference is re-bound.",
-    "support": "Deemed success with {code} on the first attempt; the retry succeeded under {referenceActive}. Settlement batch {batch} bound the original {referenceKind} {referenceSuperseded} and excluded it at close. The merchant is owed the full amount. Action REBIND_RRN_AND_REQUEUE needs ops approval. Tell them the funds are safe and give the next cycle date, not an apology for a failure, because it did not fail.",
+    "support": "Deemed success with {code} on the first attempt; the retry succeeded under {referenceActive}. Settlement batch {batch} bound the original {referenceKind} {referenceSuperseded} and excluded it at close. The merchant is owed the full amount. The fix is to re-bind the reference and requeue it, which needs ops approval. Tell them the funds are safe and give the next cycle date, not an apology for a failure, because it did not fail.",
     "engineer": "PAYER_DEBIT timed out with {code} under {referenceKind} {referenceSuperseded}. The switch retried and the debit succeeded under {referenceActive}; PAYEE_CREDIT confirmed. SETTLEMENT_SCHEDULED recorded boundReference {referenceSuperseded}, the pre-retry value, and BATCH_CLOSED for {batch} reported included=false. Root cause: the settlement selector binds the reference captured at schedule time rather than the current active reference of the payment. Rule RECON_RRN_MUTATION matched."
   },
   "BANK_CUTOFF_MISSED_WEEKEND": {
@@ -41,7 +41,7 @@
   },
   "BENEFICIARY_BANK_UNAVAILABLE": {
     "merchant": "The customer was debited but our receiving bank could not be reached, so the credit did not complete. The network has already started an automatic reversal and the customer will get their money back. You should not treat this order as paid.",
-    "support": "{code} at PAYEE_CREDIT after a timeout. The customer WAS debited, so they will call. The auto-reversal was initiated at {reversalTime} with a {slaHours} hour window. Give the customer that window and do not ask them to raise a dispute, because the reversal is already running. The merchant should not ship.",
+    "support": "{code} from the receiving bank after a timeout, so the credit never completed. The customer WAS debited, so they will call. The auto-reversal was initiated at {reversalTime} with a {slaHours} hour window. Give the customer that window and do not ask them to raise a dispute, because the reversal is already running. The merchant should not ship.",
     "engineer": "PAYER_DEBIT succeeded under {reference}, then PAYEE_CREDIT failed with {code}. AUTO_REVERSAL_INITIATED at {reversalTime}, still PENDING, {slaHours} hour SLA. Asymmetric state: debit without credit, with a reversal in flight. Rule BENEFICIARY_DOWN_AUTOREVERSE matched. Watch for reversal confirmation; its absence inside the SLA escalates."
   },
   "ISSUER_SOFT_DECLINE_RETRY_SUCCESS": {

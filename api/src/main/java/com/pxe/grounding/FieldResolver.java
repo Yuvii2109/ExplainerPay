@@ -147,8 +147,10 @@ public final class FieldResolver {
         if (field.endsWith("minor") && value instanceof Number number) {
             return String.format(Locale.UK, "%,.2f", number.doubleValue() / 100.0);
         }
+        // No unit: the sentence around the placeholder supplies one, and a resolver that adds
+        // its own produces "400 ms milliseconds".
         if (field.equals("latencyms") && value instanceof Number number) {
-            return String.format(Locale.UK, "%,d ms", number.longValue());
+            return String.format(Locale.UK, "%,d", number.longValue());
         }
         return String.valueOf(value);
     }
