@@ -3,6 +3,7 @@
 import Link from "next/link";
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
+import { Owed } from "@/components/Owed";
 import * as label from "@/lib/labels";
 import { PUBLIC_API, money, type Header } from "@/lib/pxe";
 
@@ -173,6 +174,8 @@ export function PayScreen({ payments }: { payments: Header[] }) {
         loud is the credible version: no bank times out on cue, and the failures worth explaining
         here surface in settlement hours later.
       </p>
+
+      <Owed />
 
       {taken.length > 0 ? (
         <>

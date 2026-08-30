@@ -1089,3 +1089,52 @@ tbody tr {
 .payee-on-payment {
   font-size: 13px;
 }
+
+/* ---- what is still owed ---- */
+
+.payee-lines {
+  display: grid;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.payee.bill .bill-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bill-amount {
+  font-family: var(--mono);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.payee.anything {
+  border-style: dashed;
+  background: none;
+}
+
+.flag {
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.flag.late {
+  color: var(--warn);
+}
+
+.flag.part {
+  color: var(--bad);
+}
+
+.owed-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}

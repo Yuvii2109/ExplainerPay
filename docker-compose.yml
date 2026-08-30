@@ -38,6 +38,7 @@ services:
       PXE_SCENARIOS_RESOURCE: file:/app/data/payment-scenarios.json
       PXE_AMBIGUITY_RESOURCE: file:/app/data/ambiguity-set.json
       PXE_MERCHANTS_RESOURCE: file:/app/data/merchants.json
+      PXE_PAYABLES_RESOURCE: file:/app/data/payables.json
       PXE_EXPECTATIONS_RESOURCE: file:/app/data/expectations.json
       PXE_RAIL_SEQUENCES_RESOURCE: file:/app/data/rail-sequences.json
       PXE_CAUSES_RESOURCE: file:/app/data/causes.json

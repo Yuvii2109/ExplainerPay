@@ -1,6 +1,9 @@
 package com.pxe.ingest;
 
+import com.pxe.payable.Payable;
+import com.pxe.payable.Payables;
 import java.io.IOException;
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,14 +24,16 @@ public class IntakeController {
     private final ArmedScenario armed;
     private final com.pxe.model.Merchants merchants;
     private final com.pxe.model.PaymentRepository payments;
+    private final Payables payables;
 
     public IntakeController(PaymentIntake intake, ArmedScenario armed,
                             com.pxe.model.Merchants merchants,
-                            com.pxe.model.PaymentRepository payments) {
+                            com.pxe.model.PaymentRepository payments, Payables payables) {
         this.intake = intake;
         this.armed = armed;
         this.merchants = merchants;
         this.payments = payments;
+        this.payables = payables;
     }
 
     /**
@@ -44,13 +49,55 @@ public class IntakeController {
             var owed = payments.findByDebtOpenTrueOrderByAmountMinorDesc().stream()
                     .filter(p -> m.id().equals(p.getMerchantId()))
                     .toList();
+            var outstanding = payables.openFor(m.id());
             return new Payee(m.id(), m.name(), m.category(), owed.size(),
-                    owed.stream().mapToLong(com.pxe.model.Payment::getAmountMinor).sum());
+                    owed.stream().mapToLong(com.pxe.model.Payment::getAmountMinor).sum(),
+                    outstanding.size(),
+                    outstanding.stream().mapToLong(Payable::getRemainingMinor).sum());
         }).toList();
     }
 
+    /**
+     * A merchant on the checkout list.
+     *
+     * <p>Two independent numbers, and conflating them would be the whole product misunderstood.
+     * {@code owedMinor} is money that has not reached them yet and paying it makes it go away.
+     * {@code exposureMinor} is money whose fate nobody can account for, and paying does nothing to
+     * it at all.
+     */
     public record Payee(String id, String name, String category, int unexplained,
-                        long exposureMinor) {
+                        long exposureMinor, int outstanding, long owedMinor) {
+    }
+
+    /** What is still owed, oldest due date first. Optionally for one merchant. */
+    @GetMapping("/api/payables")
+    public List<Owed> payables(
+            @RequestParam(value = "merchant", required = false) String merchantId) {
+        List<Payable> rows = merchantId == null ? payables.open() : payables.openFor(merchantId);
+        LocalDate today = LocalDate.now();
+        return rows.stream()
+                .map(p -> new Owed(p.getId(), p.getMerchantId(), merchants.name(p.getMerchantId()),
+                        p.getDescription(), p.getDueOn().toString(), p.getCurrency(),
+                        p.getAmountMinor(), p.getRemainingMinor(),
+                        p.getDueOn().isBefore(today),
+                        p.getRemainingMinor() < p.getAmountMinor(), p.getLastPaymentId()))
+                .toList();
+    }
+
+    /**
+     * {@code part} marks a row a payment reached without closing. That is the interesting state:
+     * money moved, the rails said it succeeded, and the merchant is still short.
+     */
+    public record Owed(String id, String merchantId, String merchantName, String description,
+                       String dueOn, String currency, long amountMinor, long remainingMinor,
+                       boolean overdue, boolean part, String lastPaymentId) {
+    }
+
+    /** Back to what was owed at the start. Payments and their debts are left alone. */
+    @PostMapping("/api/payables/reset")
+    public ResponseEntity<Void> resetPayables() throws IOException {
+        payables.reset();
+        return ResponseEntity.noContent().build();
     }
 
     /** What the checkout is about to become, so the phone can show it before anyone pays. */
@@ -69,11 +116,13 @@ public class IntakeController {
     public ResponseEntity<PaymentIntake.Taken> pay(
             @RequestParam(value = "as", required = false) String scenarioId,
             @RequestParam(value = "amountMinor", required = false) Long amountMinor,
-            @RequestParam(value = "merchant", required = false) String merchantId)
+            @RequestParam(value = "merchant", required = false) String merchantId,
+            @RequestParam(value = "payable", required = false) String payableId)
             throws IOException {
         try {
             return ResponseEntity.ok(intake.take(
-                    scenarioId == null ? armed.get() : scenarioId, amountMinor, merchantId));
+                    scenarioId == null ? armed.get() : scenarioId, amountMinor, merchantId,
+                    payableId));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         }

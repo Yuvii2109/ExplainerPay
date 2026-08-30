@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.pxe.deviation.DeviationDetection;
 import com.pxe.explain.ExplanationPipeline;
 import com.pxe.model.PaymentRepository;
+import com.pxe.payable.Payables;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.HexFormat;
@@ -41,23 +42,33 @@ public class PaymentIntake {
     private final DeviationDetection detection;
     private final ExplanationPipeline pipeline;
     private final com.pxe.model.Merchants merchants;
+    private final Payables payables;
 
     public PaymentIntake(ScenarioLoader loader, PaymentRepository payments,
                          DeviationDetection detection, ExplanationPipeline pipeline,
-                         com.pxe.model.Merchants merchants) {
+                         com.pxe.model.Merchants merchants, Payables payables) {
         this.loader = loader;
         this.payments = payments;
         this.detection = detection;
         this.pipeline = pipeline;
         this.merchants = merchants;
+        this.payables = payables;
     }
 
-    /** The id of the payment that was just taken in. */
-    public record Taken(String paymentId, String from, long amountMinor, String merchantId) {
+    /**
+     * The id of the payment that was just taken in, and what it did to what was owed.
+     *
+     * <p>{@code creditedMinor} is what reached the merchant, which is not always what was paid. It
+     * is reported separately from the amount so the screen that follows can say which of the two it
+     * means.
+     */
+    public record Taken(String paymentId, String from, long amountMinor, String merchantId,
+                        String payableId, long creditedMinor) {
     }
 
     @Transactional
-    public Taken take(String scenarioId, Long amountMinor, String merchantId) throws IOException {
+    public Taken take(String scenarioId, Long amountMinor, String merchantId, String payableId)
+            throws IOException {
         JsonNode template = loader.scenario(scenarioId)
                 .orElseThrow(() -> new IllegalArgumentException("no scenario " + scenarioId));
 
@@ -76,9 +87,13 @@ public class PaymentIntake {
         detection.detectAll();
         pipeline.resolveAll();
 
+        // Only now, with the timeline resolved, is it knowable what the merchant was credited.
+        // Applying it earlier would settle a payable on the strength of an intention.
+        long credited = payableId == null ? 0 : payables.apply(payableId, paymentId);
+
         log.info("took in {} from scenario {} for {} minor to {}", paymentId, scenarioId, amount,
                 payee);
-        return new Taken(paymentId, scenarioId, amount, payee);
+        return new Taken(paymentId, scenarioId, amount, payee, payableId, credited);
     }
 
     /**

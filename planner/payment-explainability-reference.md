@@ -257,6 +257,10 @@ rule_hits       payment_id, rule_id, matched_at, inputs jsonb
 model_calls     payment_id, job, admitted, priority, reason,
                 prompt_tokens, completion_tokens, latency_ms,
                 rejected_by, rejected_payload
+
+merchant_payables
+                id, merchant_id, description, due_on, currency,
+                amount_minor, remaining_minor, settled_at, last_payment_id
 ```
 
 **`payment_references` is a table and not a column.** Reference mutation across a retry is one of the
@@ -274,6 +278,48 @@ predicates on is a typed column, never a blob key.
 
 **`debt_open` is on `payments`.** The debt queue is `WHERE debt_open = true ORDER BY amount_minor
 DESC`. No separate table, no separate service.
+
+## 8.1 What the platform still owes
+
+A payout queue: money the platform holds and has not handed to the merchant yet. Weekly
+settlements, a refund owed to a customer, a commission reversal, a supplier invoice. This is
+ordinary accounts payable and it is deliberately **not** the explanation debt of section 3. The two
+are named apart because they behave apart:
+
+- A payable is discharged by **money**. Pay it and it shrinks.
+- An explanation debt is discharged by an **answer**. Paying does nothing to it.
+
+They belong in the same product because the interesting failure is exactly where they cross.
+`remaining_minor` is decremented by **what the merchant was credited**, and never by what the
+customer was charged. Credited means, in order:
+
+1. The payment cleared: its resolved tag is `SUCCESS` or `DEEMED_SUCCESS`. Anything else credits
+   nothing, so a decline, a switch timeout and a payout still pending all leave the row exactly as
+   it was.
+2. The money is the amount on the **last** settlement hop that occurred, which is `PAYEE_CREDIT` on
+   the UPI rails and `PAYOUT_CREDITED` on the card rails. A payment carrying both is credited by the
+   second, because the payee bank is not the merchant's bank.
+3. A settlement hop with no `occurred_at` is the absent node of section 19 and credits nothing.
+4. A settlement hop carrying no amount credits the full payment amount. Appendix A states an amount
+   on that hop only when it differs from the payment, so silence there means all of it arrived.
+   Reading silence as zero would make every clean payment look like a failure.
+
+That rule is the whole point of carrying the queue:
+
+| what happened | payable | debt |
+| --- | --- | --- |
+| clean settlement | closes | none opened |
+| PXE-012, fee applied twice in a batch | stays open for the difference | opens |
+| PXE-002 declined, PXE-011 timed out | untouched, still shows in full | opens |
+| PXE-007 settled late | closes, the money did arrive | opens, late is still a deviation |
+
+The last two rows are the argument. A payable that closes while a debt opens is section 3 in a
+single line of a table: **the money moved and nobody can say what happened to it.** A payable that
+refuses to close after a payment the rails tagged `SUCCESS` is the same claim from the other side.
+Neither is reachable in a system that tracks only one of the two.
+
+Payables never write to the ledger and never influence a deviation. They read the timeline and
+nothing else, so nothing here can bend an explanation toward an answer.
 
 ## 9. The expectation model
 
@@ -636,9 +682,12 @@ that jumps is read as a refresh.
 
 ## 18. The screens
 
-Four. No more.
+Four carry the argument. `/checkout` and `/scan` exist because the QR has to land somewhere, and
+`/grounding` exists because the contract in section 15 is only credible if you can watch it throw
+something away. They are plumbing for the four, not a fifth idea.
 
-**`/pay`.** A QR, large. The two persistent widgets. Nothing else.
+**`/pay`.** The merchant console. A QR, large. The two persistent widgets. What the next scan does,
+and what each merchant is still owed, shrinking as payments clear.
 
 ```
   ┌───────────────┐

@@ -55,6 +55,26 @@ export type Snapshot = {
   tokensSpent: number;
 };
 
+/**
+ * Money the platform still owes a merchant. Section 8.1.
+ *
+ * Not the explanation debt. This one is discharged by paying it, which is exactly what the other
+ * one is not, and the two are kept in separate fields so no screen can quietly average them.
+ */
+export type Payable = {
+  id: string;
+  merchantId: string;
+  merchantName: string;
+  description: string;
+  dueOn: string;
+  currency: string;
+  amountMinor: number;
+  remainingMinor: number;
+  overdue: boolean;
+  part: boolean;
+  lastPaymentId: string | null;
+};
+
 export type Counters = {
   debtOpen: number;
   exposureMinor: number;

@@ -1,0 +1,26 @@
+[
+  { "id": "OWE-1001", "merchantId": "MERCH-ESPALIER", "description": "Weekly settlement, 10 to 16 August", "dueOn": "2026-08-19", "amountMinor": 24815000 },
+  { "id": "OWE-1002", "merchantId": "MERCH-ESPALIER", "description": "Refund owed to customer, order 4471", "dueOn": "2026-08-22", "amountMinor": 189000 },
+  { "id": "OWE-1003", "merchantId": "MERCH-ESPALIER", "description": "Card network commission reversal", "dueOn": "2026-08-27", "amountMinor": 47325 },
+  { "id": "OWE-1004", "merchantId": "MERCH-ESPALIER", "description": "Weekly settlement, 17 to 23 August", "dueOn": "2026-09-02", "amountMinor": 31204050 },
+
+  { "id": "OWE-1005", "merchantId": "MERCH-KAVERI", "description": "Weekly settlement, 10 to 16 August", "dueOn": "2026-08-19", "amountMinor": 68432075 },
+  { "id": "OWE-1006", "merchantId": "MERCH-KAVERI", "description": "Chargeback won, funds returned", "dueOn": "2026-08-24", "amountMinor": 1250000 },
+  { "id": "OWE-1007", "merchantId": "MERCH-KAVERI", "description": "Supplier invoice 2291, produce", "dueOn": "2026-08-28", "amountMinor": 8875000 },
+  { "id": "OWE-1008", "merchantId": "MERCH-KAVERI", "description": "Refund owed to customer, order 8813", "dueOn": "2026-09-01", "amountMinor": 62400 },
+
+  { "id": "OWE-1009", "merchantId": "MERCH-NILGIRI", "description": "Weekly settlement, 10 to 16 August", "dueOn": "2026-08-19", "amountMinor": 52130080 },
+  { "id": "OWE-1010", "merchantId": "MERCH-NILGIRI", "description": "Festive campaign payout, held 4 days", "dueOn": "2026-08-21", "amountMinor": 17500000 },
+  { "id": "OWE-1011", "merchantId": "MERCH-NILGIRI", "description": "Refund owed to customer, order 1902", "dueOn": "2026-08-26", "amountMinor": 349900 },
+  { "id": "OWE-1012", "merchantId": "MERCH-NILGIRI", "description": "Processing fee correction, July cycle", "dueOn": "2026-09-03", "amountMinor": 118475 },
+
+  { "id": "OWE-1013", "merchantId": "MERCH-TANSA", "description": "Weekly settlement, 10 to 16 August", "dueOn": "2026-08-19", "amountMinor": 93655025 },
+  { "id": "OWE-1014", "merchantId": "MERCH-TANSA", "description": "Insurance reimbursement passed through", "dueOn": "2026-08-23", "amountMinor": 27400000 },
+  { "id": "OWE-1015", "merchantId": "MERCH-TANSA", "description": "Refund owed to patient, visit 3320", "dueOn": "2026-08-29", "amountMinor": 450000 },
+  { "id": "OWE-1016", "merchantId": "MERCH-TANSA", "description": "Partner laboratory share, July", "dueOn": "2026-09-04", "amountMinor": 6120000 },
+
+  { "id": "OWE-1017", "merchantId": "MERCH-SARAS", "description": "Weekly settlement, 10 to 16 August", "dueOn": "2026-08-19", "amountMinor": 128900000 },
+  { "id": "OWE-1018", "merchantId": "MERCH-SARAS", "description": "Order deposit released, order 771", "dueOn": "2026-08-25", "amountMinor": 35000000 },
+  { "id": "OWE-1019", "merchantId": "MERCH-SARAS", "description": "Cancelled order refunded, order 744", "dueOn": "2026-08-30", "amountMinor": 8750000 },
+  { "id": "OWE-1020", "merchantId": "MERCH-SARAS", "description": "Transport vendor reimbursement", "dueOn": "2026-09-05", "amountMinor": 1962500 }
+]

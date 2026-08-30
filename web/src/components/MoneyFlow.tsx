@@ -19,7 +19,7 @@ export function MoneyFlow({ hops, currency }: { hops: Hop[]; currency: string })
 
   const authorized = at("NETWORK_AUTH") ?? at("AUTH_REQUEST");
   const captured = at("CAPTURED") ?? at("PAYER_DEBIT");
-  const settled = at("PAYOUT_CREDITED");
+  const settled = at("PAYOUT_CREDITED") ?? at("PAYEE_CREDIT");
 
   const known = [authorized, captured, settled].filter((v): v is number => v != null);
   if (known.length < 2 || new Set(known).size === 1) return null;

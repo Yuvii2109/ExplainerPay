@@ -19,6 +19,7 @@ pxe:
   scenarios-resource: file:../data/payment-scenarios.json
   ambiguity-resource: file:../data/ambiguity-set.json
   merchants-resource: file:../data/merchants.json
+  payables-resource: file:../data/payables.json
   expectations-resource: file:../data/expectations.json
   rail-sequences-resource: file:../data/rail-sequences.json
   ai-url: ${PXE_AI_URL:http://localhost:18000}

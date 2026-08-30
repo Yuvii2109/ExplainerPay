@@ -67,6 +67,12 @@ that *"the model has no database connection"* is verifiable by reading `docker-c
 | `POST /api/grounding/probe/{id}/{rule}` | pxe-api | 7, a malformed response through the real validator |
 | `GET /api/grounding/rejections` | pxe-api | 7, the rejection log |
 | `/grounding` | pxe-web | 7, beat 10 |
+| `GET /api/merchants` | pxe-api | who can be paid, what each is owed and what each has unexplained |
+| `GET /api/payables` | pxe-api | section 8.1, the payout queue, oldest due date first, `?merchant=` optional |
+| `POST /api/payables/reset` | pxe-api | back to what the file says, leaving payments and debts alone |
+| `POST /api/pay` | pxe-api | the only route that creates a payment, `?payable=` applies it to a bill |
+| `POST /api/pay/arm`, `GET /api/pay/armed` | pxe-api | what the rails do on the next scan |
+| `/checkout`, `/scan` | pxe-web | where the QR lands: merchant, then bill, then amount |
 
 The four screens of reference section 18, `/pay`, `/payment/[id]`, `/debt`, `/eval`, arrive in
 phases 3 and 5.
@@ -128,6 +134,22 @@ Two indexes carry meaning rather than performance:
 - `explanations_fact_set_idx`, unique on `(payment_id, fact_set_hash)`, section 16's
   content-addressed cache expressed as a constraint, so a re-generation is a constraint
   violation rather than a convention nobody enforces.
+
+`V3__merchant_payables.sql` adds section 8.1: twenty rows of ordinary accounts payable seeded from
+`data/payables.json`. A check constraint keeps `remaining_minor` between zero and the amount raised,
+because overpaying settles a bill here and does not turn into a balance this system does not hold.
+
+**Payables are not explanation debt and the code must never conflate them.** `remaining_minor` comes
+down only when the payment cleared (`SUCCESS` or `DEEMED_SUCCESS`) and only by the amount on the last
+settlement hop that occurred, `PAYEE_CREDIT` on the UPI rails or `PAYOUT_CREDITED` on the card rails.
+A settlement hop with no `occurred_at` credits nothing; one carrying no amount credits the payment in
+full, because Appendix A states an amount there only when it differs. `com.pxe.payable.Payables`
+reads the resolved outcome and the hops and writes one column. It never touches a deviation or an
+explanation, so nothing owed can bend what the system says happened.
+
+The crossing is the point. PXE-012 closes nothing and leaves the bill short by the doubled
+processing fee while opening a debt; PXE-007 settles the bill late and opens a debt anyway; PXE-004
+and PXE-014 credit nothing at all. Ten tests in `PayableTest` pin each of those.
 
 ## Decisions
 

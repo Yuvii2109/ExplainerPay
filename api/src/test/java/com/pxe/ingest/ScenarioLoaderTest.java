@@ -193,7 +193,7 @@ class ScenarioLoaderTest {
     void takingAPaymentInCreatesANewOneRatherThanReopeningAnOld() throws Exception {
         long before = payments.count();
 
-        PaymentIntake.Taken taken = intake.take("PXE-011", null, null);
+        PaymentIntake.Taken taken = intake.take("PXE-011", null, null, null);
 
         assertThat(taken.paymentId())
                 .as("a scan is a payment going in, so it gets its own id")
@@ -217,7 +217,7 @@ class ScenarioLoaderTest {
     void theCustomerChoosesTheAmountAndEveryRecordedFigureMovesWithIt() throws Exception {
         // PXE-012 is settled short by a processing fee. Pay a different amount and the shortfall
         // has to move with it, or the timeline contradicts the total printed above it.
-        PaymentIntake.Taken taken = intake.take("PXE-012", 50_000L, null);
+        PaymentIntake.Taken taken = intake.take("PXE-012", 50_000L, null, null);
 
         assertThat(taken.amountMinor()).isEqualTo(50_000L);
         assertThat(payments.findById(taken.paymentId()).orElseThrow().getAmountMinor())
@@ -241,7 +241,7 @@ class ScenarioLoaderTest {
     void aShortfallTooSmallToPrintIsNotAShortfallOfZero() throws Exception {
         // Scaled far enough down, the fee would round away. Rounding a real difference to nothing
         // would turn a reconciliation break into a clean payment.
-        PaymentIntake.Taken taken = intake.take("PXE-012", 10_000L, null);
+        PaymentIntake.Taken taken = intake.take("PXE-012", 10_000L, null, null);
 
         long captured = hops.findByPaymentIdOrderBySeqAsc(taken.paymentId()).stream()
                 .filter(h -> "CAPTURED".equals(h.getStage()))
