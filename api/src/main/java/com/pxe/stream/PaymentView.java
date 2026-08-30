@@ -64,6 +64,11 @@ public class PaymentView {
                 modelCalls.findByPaymentId(paymentId).stream().mapToInt(ModelCall::tokens).sum()));
     }
 
+    /**
+     * The two axes together. A list row that shows only the tag makes a SUCCESS carrying a debt
+     * look like a bug, when it is the most interesting row on the screen: the rails are content
+     * and the expectation model is not.
+     */
     public Header header(Payment payment) {
         return new Header(
                 payment.getId(),
@@ -76,7 +81,10 @@ public class PaymentView {
                 payment.getResponseCode(),
                 payment.isDebtOpen(),
                 payment.getDebtOpenedAt(),
-                payment.getDebtClosedAt());
+                payment.getDebtClosedAt(),
+                deviations.findByPaymentIdOrderByTypeAsc(payment.getId()).stream()
+                        .map(d -> d.getType().name())
+                        .toList());
     }
 
     public static Hop hop(PaymentHop h) {
@@ -98,7 +106,8 @@ public class PaymentView {
 
     public record Header(String paymentId, String merchantId, long amountMinor, String currency,
                          String instrument, String rail, String tag, String responseCode,
-                         boolean debtOpen, Instant debtOpenedAt, Instant debtClosedAt) {
+                         boolean debtOpen, Instant debtOpenedAt, Instant debtClosedAt,
+                         List<String> deviations) {
     }
 
     /** {@code absent} is a hop that did not happen. The timeline draws it rather than skipping it. */

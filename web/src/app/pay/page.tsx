@@ -30,6 +30,11 @@ export default async function Pay() {
       </div>
 
       <h2>Scenario selector</h2>
+      <p className="note" style={{ margin: "0 0 12px" }}>
+        A payment has two independent axes. The tag is what the rails said; the deviation column is
+        what the expectation model says. They disagree more often than is comfortable, which is why
+        a payment can read <span className="MET">Succeeded</span> and still owe an explanation.
+      </p>
       <div className="panel">
         <table>
           <thead>
@@ -39,6 +44,7 @@ export default async function Pay() {
               <th className="num">Amount</th>
               <th>Tag</th>
               <th>Code</th>
+              <th>Against expectation</th>
               <th>Debt</th>
               <th></th>
             </tr>
@@ -62,6 +68,19 @@ export default async function Pay() {
                 </td>
                 <td data-label="Code" className="dim" title={p.responseCode ?? ""}>
                   {p.responseCode ? label.code(p.responseCode) : label.NONE}
+                </td>
+                <td data-label="Against expectation">
+                  {p.deviations.length === 0 ? (
+                    <span className="dim">nothing</span>
+                  ) : (
+                    <span className="deviations">
+                      {p.deviations.map((d) => (
+                        <span key={d} className="deviation" title={d}>
+                          {label.deviation(d)}
+                        </span>
+                      ))}
+                    </span>
+                  )}
                 </td>
                 <td data-label="Debt" className={p.debtOpen ? "NOT_MET" : "dim"}>
                   {p.debtOpen ? "open" : p.debtOpenedAt ? "paid" : "none"}

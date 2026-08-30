@@ -116,7 +116,9 @@ public class ExplanationPipeline {
             Optional<Explanation> cached = explanations.findByPaymentId(payment.getId());
             if (cached.isPresent() && cached.get().getFactSetHash().equals(hash)) {
                 payment.openDebt(at);
-                payment.closeDebt(at);
+                if (!"ABSTAIN".equals(cached.get().getPath())) {
+                    payment.closeDebt(at);
+                }
                 payments.save(payment);
                 if ("CODE".equals(cached.get().getPath())) {
                     viaCode++;
@@ -256,7 +258,13 @@ public class ExplanationPipeline {
                 shown == null ? null : shown.engineer(),
                 at));
 
-        payment.closeDebt(at);
+        // An abstention does not pay the debt. A cause pays it; an honest refusal to name one
+        // means nobody has explained this payment yet, the money is still missing, and a human has
+        // to go and get the answer. Closing it here would let the console trend to zero by giving
+        // up, which is the one way to make the number lie.
+        if (proposed.determinable()) {
+            payment.closeDebt(at);
+        }
         payments.save(payment);
 
         log.info("model path for {}: determinable={} cause={} confidence={} rendering={}",

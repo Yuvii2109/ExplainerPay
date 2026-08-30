@@ -42,6 +42,7 @@ export type Header = {
   debtOpen: boolean;
   debtOpenedAt: string | null;
   debtClosedAt: string | null;
+  deviations: string[];
 };
 
 export type Snapshot = {
@@ -53,7 +54,13 @@ export type Snapshot = {
   tokensSpent: number;
 };
 
-export type Counters = { debtOpen: number; exposureMinor: number; tokensSpent: number };
+export type Counters = {
+  debtOpen: number;
+  exposureMinor: number;
+  tokensSpent: number;
+  explained: number;
+  viaModel: number;
+};
 
 /** Server-side base URL, inside the compose network. */
 export const API = process.env.PXE_API_URL ?? "http://localhost:18080";

@@ -12,6 +12,7 @@ type Owed = {
   responseCode: string | null;
   openedAt: string | null;
   ageSeconds: number;
+  deviations: string[];
 };
 
 type Debt = { open: number; exposureMinor: number; queue: Owed[] };
@@ -41,7 +42,7 @@ export default async function DebtQueue() {
               <th>Payment</th>
               <th className="num">Exposure</th>
               <th>Tag</th>
-              <th>Code</th>
+              <th>Against expectation</th>
               <th className="num">Age</th>
               <th></th>
             </tr>
@@ -67,8 +68,18 @@ export default async function DebtQueue() {
                       {label.tag(o.tag)}
                     </span>
                   </td>
-                  <td data-label="Code" className="dim" title={o.responseCode ?? ""}>
-                    {o.responseCode ? label.code(o.responseCode) : label.NONE}
+                  <td data-label="Against expectation">
+                    {o.deviations.length === 0 ? (
+                      <span className="dim">nothing</span>
+                    ) : (
+                      <span className="deviations">
+                        {o.deviations.map((d) => (
+                          <span key={d} className="deviation" title={d}>
+                            {label.deviation(d)}
+                          </span>
+                        ))}
+                      </span>
+                    )}
                   </td>
                   <td data-label="Age" className="num">
                     {age(o.ageSeconds)}

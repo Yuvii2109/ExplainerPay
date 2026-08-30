@@ -170,6 +170,11 @@ Other decisions:
 - **`pxe-web` runs `next dev`** in the container for now. Phase 5 needs a production build to
   measure the section 17.7 budgets.
 - **Published ports are shifted and overridable** (`PXE_PORT_POSTGRES`, `_API`, `_AI`, `_WEB`).
+- **An abstention does not pay the debt** (reference section 3). A response code pays it, a rule
+  pays it, a cited hypothesis pays it. "Cannot be determined" is the correct output and it is still
+  nobody having explained the payment: the money is missing and a human has to go and get the
+  answer. Closing it there would let the console trend to zero by giving up, which is the one way
+  to make the number lie. PXE-014 stays on the queue, and the panel says so.
 - **One shape for one concept.** `POST /explain` answered with a narrower record than the screen
   renders, one carrying no audience text, so an explanation arrived at the panel with the prose the
   pipeline had just written stripped out of it and the screen read "no rendering at this level"

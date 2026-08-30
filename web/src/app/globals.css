@@ -158,9 +158,9 @@ p {
   align-content: center;
   justify-items: end;
   text-align: right;
-  padding: 4px 14px;
+  padding: 4px 16px;
   border-left: 1px solid var(--line);
-  min-width: 150px;
+  min-width: 210px;
 }
 
 .widget-label {
@@ -798,4 +798,17 @@ pre.payload {
   padding: 1px 5px;
   white-space: nowrap;
   cursor: help;
+}
+
+/* An abstention does not pay the debt, and the panel says so rather than leaving the reader to
+   notice the queue did not move. */
+.still-owed {
+  margin: 0 0 14px;
+  padding: 9px 12px;
+  border-left: 2px solid var(--warn);
+  background: var(--raised);
+  border-radius: 0 6px 6px 0;
+  color: var(--muted);
+  font-size: 13px;
+  max-width: 82ch;
 }

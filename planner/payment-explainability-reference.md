@@ -62,6 +62,17 @@ Modelling it as a debt rather than a flag gives you three things: a **work queue
 exposure, a **service level** (time from failure to explanation, which predicts support load better
 than success rate), and a number on the console that should trend to zero.
 
+**An abstention does not pay the debt.** A response code pays it, a rule pays it, and a cited
+hypothesis pays it. "Cannot be determined" is the correct output when the evidence does not reach a
+cause, and it is still an admission that nobody has explained the payment: the money is missing, the
+merchant is owed an answer, and a human now has to go and get one. Closing the debt there would let
+the console trend to zero by giving up, which is the one way to make the number lie.
+
+So an abstention produces an explanation record, renders all three audiences, and leaves
+`debt_open = true`. PXE-014 stays on the queue until somebody resolves it. That is the intended
+end state of the demo: the debt falls but does not reach zero, and the one payment still on the
+queue is the one the system was honest about.
+
 ### Idea two: explainability is six rungs, climbed in order
 
 | Rung | Name | Produced by | Can it be wrong? |

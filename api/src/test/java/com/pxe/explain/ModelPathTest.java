@@ -93,7 +93,9 @@ class ModelPathTest {
         assertThat(explanation.isAbstained()).isFalse();
         assertThat(explanation.getConfidence().doubleValue()).isEqualTo(0.78);
         assertThat(explanation.getPromptVersion()).isEqualTo("hypothesis@test+synthesis@test");
-        assertThat(payments.findById("PXE-011").orElseThrow().isDebtOpen()).isFalse();
+        assertThat(payments.findById("PXE-011").orElseThrow().isDebtOpen())
+                .as("a cited hypothesis is an explanation, so it pays the debt")
+                .isFalse();
     }
 
     @Test
@@ -112,6 +114,12 @@ class ModelPathTest {
                 .as("cannot be determined is preferred to a plausible guess")
                 .isNull();
         assertThat(explanation.getConfidence()).isNull();
+
+        // An abstention does not pay the debt. Nobody has explained this payment, the money is
+        // still missing, and a human has to go and get the answer, so it stays on the queue.
+        assertThat(payments.findById("PXE-014").orElseThrow().isDebtOpen())
+                .as("closing the debt here would let the console trend to zero by giving up")
+                .isTrue();
 
         // Section 19: naming the missing thing precisely IS the answer. An abstention that
         // renders nothing has named nothing, and it is the one screen that must always speak.

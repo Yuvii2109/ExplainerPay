@@ -96,7 +96,8 @@ public class ExplanationController {
                         p.getResponseCode(),
                         p.getDebtOpenedAt(),
                         p.getDebtOpenedAt() == null ? 0
-                                : Duration.between(p.getDebtOpenedAt(), now).toSeconds()))
+                                : Duration.between(p.getDebtOpenedAt(), now).toSeconds(),
+                        view.header(p).deviations()))
                 .toList();
         long exposure = open.stream().mapToLong(Owed::amountMinor).sum();
         return new Debt(open.size(), exposure, open);
@@ -109,7 +110,8 @@ public class ExplanationController {
     }
 
     public record Owed(String paymentId, long amountMinor, String currency, String tag,
-                       String responseCode, Instant openedAt, long ageSeconds) {
+                       String responseCode, Instant openedAt, long ageSeconds,
+                       List<String> deviations) {
     }
 
     public record Debt(int open, long exposureMinor, List<Owed> queue) {

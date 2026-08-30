@@ -40,6 +40,7 @@ public class PaymentStreamController {
     private final PaymentView view;
     private final PaymentRepository payments;
     private final ModelCallRepository modelCalls;
+    private final com.pxe.explain.ExplanationRepository explanations;
     private final ExecutorService streams = Executors.newFixedThreadPool(8, r -> {
         Thread t = new Thread(r, "pxe-stream");
         t.setDaemon(true);
@@ -49,10 +50,12 @@ public class PaymentStreamController {
 
     public PaymentStreamController(PaymentView view, PaymentRepository payments,
                                    ModelCallRepository modelCalls,
+                                   com.pxe.explain.ExplanationRepository explanations,
                                    @Value("${pxe.stream.hop-delay-ms}") long hopDelayMs) {
         this.view = view;
         this.payments = payments;
         this.modelCalls = modelCalls;
+        this.explanations = explanations;
         this.hopDelayMs = hopDelayMs;
     }
 
@@ -79,10 +82,16 @@ public class PaymentStreamController {
     @GetMapping("/counters")
     public Counters counters() {
         List<Payment> open = payments.findByDebtOpenTrueOrderByAmountMinorDesc();
+        long explained = explanations.count();
+        long viaModel = explanations.findAll().stream()
+                .filter(e -> "MODEL".equals(e.getPath()) || "ABSTAIN".equals(e.getPath()))
+                .count();
         return new Counters(
                 open.size(),
                 open.stream().mapToLong(Payment::getAmountMinor).sum(),
-                modelCalls.findAll().stream().mapToInt(ModelCall::tokens).sum());
+                modelCalls.findAll().stream().mapToInt(ModelCall::tokens).sum(),
+                explained,
+                viaModel);
     }
 
     @GetMapping(value = "/payments/{id}/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
@@ -139,6 +148,13 @@ public class PaymentStreamController {
     public record Done(int tokensSpent) {
     }
 
-    public record Counters(int debtOpen, long exposureMinor, int tokensSpent) {
+    /**
+     * {@code debtOpen} is what is still owed, not what has been produced. The two are easy to
+     * confuse at a glance on a widget, which is why the console spells the difference out
+     * underneath: a debt of one next to thirteen explanations is the system working, not the
+     * system having explained one thing.
+     */
+    public record Counters(int debtOpen, long exposureMinor, int tokensSpent, long explained,
+                           long viaModel) {
     }
 }

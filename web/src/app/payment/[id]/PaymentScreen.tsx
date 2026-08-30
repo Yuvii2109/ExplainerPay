@@ -99,6 +99,7 @@ export function PaymentScreen({ snapshot, live }: { snapshot: Snapshot; live: bo
       <ExplanationPanel
         explanation={explanation}
         debtOpen={current.header.debtOpen && !explanation}
+        stillOwed={current.header.debtOpen && explanation != null}
         onExplain={explain}
         busy={busy}
       />

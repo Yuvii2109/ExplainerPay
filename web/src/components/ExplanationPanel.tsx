@@ -8,6 +8,7 @@ import type { Explained } from "@/lib/pxe";
 type Props = {
   explanation: Explained | null;
   debtOpen: boolean;
+  stillOwed?: boolean;
   onExplain?: () => void;
   busy?: boolean;
 };
@@ -27,7 +28,7 @@ const AUDIENCES: { id: Audience; hint: string }[] = [
  * The cause leads in English and keeps its symbol underneath. The switcher changes who is being
  * spoken to, never the fact set: same evidence, three things to do about it.
  */
-export function ExplanationPanel({ explanation, debtOpen, onExplain, busy }: Props) {
+export function ExplanationPanel({ explanation, debtOpen, stillOwed, onExplain, busy }: Props) {
   const [audience, setAudience] = useState<Audience>("merchant");
 
   if (!explanation) {
@@ -101,6 +102,13 @@ export function ExplanationPanel({ explanation, debtOpen, onExplain, busy }: Pro
       <p className="rendering" data-audience={audience}>
         {text ? <Prose text={text} /> : <span className="dim">No rendering at this level.</span>}
       </p>
+
+      {stillOwed ? (
+        <p className="still-owed">
+          The debt stays open. Nothing here explains the payment, so it remains on the queue until
+          somebody does.
+        </p>
+      ) : null}
 
       <div className="citations">
         {explanation.rules.map((r) => (
