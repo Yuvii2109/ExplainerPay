@@ -20,7 +20,9 @@ ExplainerPay/
 ├── api/                        pxe-api, Java 21, Spring Boot 3.3.5, ONE Maven module
 ├── ai/                         pxe-ai , Python 3.12, FastAPI
 ├── web/                        pxe-web, Next.js 15, React 19, TypeScript
-└── data/                       (phase 1) payment-scenarios.json, expectations.json
+└── data/                       payment-scenarios.json, ambiguity-set.json, expectations.json,
+                                rail-sequences.json, causes.json, cause-templates.json,
+                                merchants.json, payables.json
 ```
 
 ## Containers
@@ -64,6 +66,7 @@ that *"the model has no database connection"* is verifiable by reading `docker-c
 | `GET /health`, `/prompts` | pxe-ai | 6, the frozen prompt versions |
 | `POST /jobs/hypothesis`, `/jobs/synthesis` | pxe-ai | 6, Job B and Job A |
 | `GET /api/grounding/rules` | pxe-api | 7, G1 to G9 |
+| `GET /api/grounding/hits/{id}` | pxe-api | 7, which rules fired on a payment |
 | `POST /api/grounding/probe/{id}/{rule}` | pxe-api | 7, a malformed response through the real validator |
 | `GET /api/grounding/rejections` | pxe-api | 7, the rejection log |
 | `/grounding` | pxe-web | 7, beat 10 |
@@ -365,10 +368,11 @@ Other decisions:
 
 ## Open against the document
 
-Found during the read, not yet fixed, each deliberately left to the phase that needs it. Four
+Found during the read, not yet fixed, each deliberately left to the phase that needs it. Five
 earlier items are gone: the deviation catalogue and expectation-row matching became sections 9.1
-and 9.2, the clock is now a stated rule rather than a gap, and `ABSENT` versus `NOT_RECEIVED`
-turned out to be a real distinction rather than a duplication.
+and 9.2, the clock is now a stated rule rather than a gap, `ABSENT` versus `NOT_RECEIVED` turned out
+to be a real distinction rather than a duplication, and `payments.merchant_id` is now supplied by
+`data/merchants.json`, which is what made G2 a check rather than a formality.
 
 - Section 14 cites a reference by *value*; G1 says citations resolve to an *id*.
 - The golden `merchant` / `support` / `engineer` texts are post-substitution renderings, not model
@@ -388,8 +392,6 @@ turned out to be a real distinction rather than a duplication.
   cannot separate them" (PXE-014) and "the record points clearly at something not on the list" are
   different findings, and only the second is a candidate for a new taxonomy entry and eventually a
   new rule. Splitting them needs a golden scenario first, per non-negotiable rule 8.
-- `payments.merchant_id` is required by G2 and no scenario supplies one.
-
 ## Phases
 
 Reference section 20, phases 0 to 8. Build stops at the end of each phase and reports its exit

@@ -38,15 +38,18 @@ docker compose down              # stop
 docker compose down -v           # stop and forget everything, for a clean demo take
 ```
 
-## The four screens
+## The screens
+
+Four carry the argument. The rest are where the QR lands.
 
 | | |
 | --- | --- |
-| `/pay` | The QR and the two widgets. The scenario selector chooses what the next scan does. |
+| `/pay` | The QR and the two widgets. The scenario selector chooses what the next scan does, and the payables queue shows what each merchant is still owed. |
 | `/payment/{id}` | The hop timeline, the outcome tag, the explanation, and the audience switcher. |
 | `/debt` | The queue: open debts sorted by exposure. The number that should trend to zero. |
 | `/eval` | The golden set, scored. Cause accuracy, false attribution, coverage, cost. |
 | `/grounding` | The nine rules, and a malformed response caught by them. |
+| `/checkout` | Where a scan lands. Pick a merchant, pick one of their outstanding bills, pick an amount. |
 
 ## What to look at first
 
@@ -65,6 +68,11 @@ comes back labelled `HYPOTHESIS`, with a confidence and its citations.
 real validator and is discarded whole, with the payload on screen. The model is structurally
 prevented from typing a number; this is what happens when it tries.
 
+**Pay a bill with PXE-012 armed.** The rails return `00 Approved` and tag it `SUCCESS`. The bill
+does not close. What the merchant was credited is less than what the customer paid, because a
+processing fee was applied twice in one settlement batch, and the queue keeps the difference open
+while a debt opens beside it. Money owed comes down by what arrived, never by what was charged.
+
 **`/eval`.** Every metric, with its numerator and denominator, because a zero that means "nothing
 measured yet" and a zero that means "failing" are different facts.
 
@@ -75,8 +83,9 @@ docker-compose.yml     four containers, four healthchecks
 api/                   pxe-api , Java 21, Spring Boot, one Maven module
 ai/                    pxe-ai  , Python 3.12, FastAPI. Holds no database credentials.
 web/                   pxe-web , Next.js 15, React 19
-data/                  the dataset, the expectation model, the rail sequences,
-                       the cause taxonomy and the per-cause templates
+data/                  the dataset, the ambiguity set, the expectation model, the rail
+                       sequences, the cause taxonomy, the per-cause templates,
+                       the merchants and what they are owed
 planner/               the reference document
 ```
 
@@ -87,7 +96,7 @@ security property, and only a process boundary proves it. Read `docker-compose.y
 
 ```bash
 docker compose up -d           # the suite runs against this Postgres
-cd api && mvn test             # 55 tests
+cd api && mvn test             # 70 tests
 ```
 
 They are integration tests against the running stack, and they **reset the database** to the
@@ -107,10 +116,11 @@ cd web && npm run check:budgets   # section 17.7: compositor-only animations
 The QR on `/pay` is real, scannable, and constant. It never changes address, so one code stays on
 screen for the whole demo.
 
-Scanning it opens a **checkout** on the phone. The customer picks an amount, or types their own, and
-presses pay. That creates a payment with its own id and its own debt, runs it through the whole
-funnel, and redirects to the timeline so they watch it being processed. The debt counter on the
-laptop moves while they look at it.
+Scanning it opens a **checkout** on the phone: pick a merchant, pick one of the bills they are
+still owed, then pay all of it, half of it, or an amount typed in. That creates a payment with its
+own id and its own debt, runs it through the whole funnel, and redirects to the timeline so they
+watch it being processed. The debt counter on the laptop moves while they look at it, and so does
+what that merchant is owed, but only by what actually reached them.
 
 What the rails do with that payment is armed on the merchant console beforehand, by clicking a row
 under **what the next scan does**. The customer chooses the amount; they do not choose whether their
