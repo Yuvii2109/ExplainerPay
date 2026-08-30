@@ -194,7 +194,9 @@ class PaymentStreamTest {
                 HttpResponse.BodyHandlers.ofString());
         JsonNode counters = mapper.readTree(response.body());
 
-        assertThat(counters.get("debtOpen").asInt()).isEqualTo(3);
+        assertThat(counters.get("debtOpen").asInt())
+                .as("three golden payments no rule explains, plus the four ambiguity cases")
+                .isEqualTo(7);
         assertThat(counters.get("tokensSpent").asInt())
                 .as("the counter does not move until a payment has earned the call")
                 .isZero();

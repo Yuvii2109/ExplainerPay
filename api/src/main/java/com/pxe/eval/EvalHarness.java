@@ -57,7 +57,7 @@ public class EvalHarness {
         Map<String, List<ModelCall>> calls = modelCalls.findAll().stream()
                 .collect(Collectors.groupingBy(ModelCall::getPaymentId));
 
-        List<Row> rows = golden.entries().stream()
+        List<Row> rows = golden.allScored().stream()
                 .map(entry -> row(entry, produced.get(entry.paymentId()),
                         calls.getOrDefault(entry.paymentId(), List.of())))
                 .toList();
@@ -65,7 +65,7 @@ public class EvalHarness {
         Map<String, Payment> resolved = payments.findAll().stream()
                 .collect(Collectors.toMap(Payment::getId, p -> p, (a, b) -> a));
 
-        return new EvalReport(Instant.now(), rows.size(), produced.size(),
+        return new EvalReport(Instant.now(), golden.entries().size(), produced.size(),
                 metrics(rows, produced, calls, resolved), rows);
     }
 
@@ -204,7 +204,9 @@ public class EvalHarness {
 
     /** "Cannot be determined" is always available and is preferred to a plausible guess. */
     private Metric abstentionCorrectness(Map<String, Explanation> produced) {
-        List<GoldenSet.Entry> mustAbstain = golden.entries().stream()
+        // Scored across both sets. A metric measured on one case is not measured, and the whole
+        // point of the ambiguity set is to make a plausible wrong answer available.
+        List<GoldenSet.Entry> mustAbstain = golden.allScored().stream()
                 .filter(GoldenSet.Entry::mustAbstain)
                 .toList();
         long abstained = mustAbstain.stream()
@@ -212,7 +214,8 @@ public class EvalHarness {
                 .filter(e -> e != null && e.isAbstained())
                 .count();
         return Metric.ratio("Abstention correctness",
-                "Abstentions on genuinely undeterminable scenarios, over scenarios that require one.",
+                "Abstentions on genuinely undeterminable cases, over cases that require one, across "
+                        + "the golden set and the ambiguity set.",
                 abstained, mustAbstain.size(), "> 90%", "Measured",
                 atLeast(abstained, mustAbstain.size(), golden.abstentionCorrectnessTarget()));
     }
@@ -237,15 +240,18 @@ public class EvalHarness {
     private Metric deterministicCoverage(List<Row> rows, Map<String, Explanation> produced,
                                          Map<String, List<ModelCall>> calls,
                                          Map<String, Payment> resolved) {
+        List<String> sample = golden.entries().stream().map(GoldenSet.Entry::paymentId).toList();
         long free = rows.stream()
+                .filter(r -> sample.contains(r.paymentId()))
                 .filter(r -> isResolved(r.paymentId(), produced, resolved))
                 .filter(r -> calls.getOrDefault(r.paymentId(), List.of()).stream()
                         .noneMatch(ModelCall::isAdmitted))
                 .count();
         return Metric.ratio("Deterministic coverage",
-                "Payments resolved with no model call, over all payments.",
-                free, rows.size(), ">= 80%", "Measured",
-                atLeast(free, rows.size(), golden.deterministicCoverageTarget()));
+                "Payments resolved with no model call, over the golden set. The ambiguity cases are "
+                        + "excluded: real traffic is not one fifth undeterminable.",
+                free, sample.size(), ">= 80%", "Measured",
+                atLeast(free, sample.size(), golden.deterministicCoverageTarget()));
     }
 
     private Metric costPerExplainedPayment(Map<String, Explanation> produced,

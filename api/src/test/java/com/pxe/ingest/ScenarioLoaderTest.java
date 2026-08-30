@@ -11,8 +11,11 @@ import com.pxe.model.PaymentReference;
 import com.pxe.model.PaymentReferenceRepository;
 import com.pxe.model.PaymentRepository;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import com.pxe.support.Baseline;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,8 +43,18 @@ class ScenarioLoaderTest {
     @Autowired
     ObjectMapper mapper;
 
+    @Autowired
+    Baseline baseline;
+    @Autowired
+    PaymentIntake intake;
+
     @Value("${pxe.scenarios-resource}")
     Resource scenarios;
+
+    @BeforeEach
+    void onlyTheGoldenSet() {
+        baseline.deterministicOnly();
+    }
 
     private JsonNode file() throws Exception {
         try (InputStream in = scenarios.getInputStream()) {
@@ -94,9 +107,15 @@ class ScenarioLoaderTest {
             expectedReferences += referencesInFile;
         }
 
-        assertThat(payments.count()).isEqualTo(document.get("scenarios").size());
-        assertThat(hops.count()).isEqualTo(expectedHops);
-        assertThat(references.count()).isEqualTo(expectedReferences);
+        // Scoped to the golden set. The ambiguity cases live in the same tables and are counted
+        // separately, because they answer a different question about the system.
+        List<String> golden = new ArrayList<>();
+        document.get("scenarios").forEach(s -> golden.add(s.get("id").asText()));
+
+        assertThat(golden).hasSize(15);
+        assertThat(golden.stream().mapToLong(hops::countByPaymentId).sum()).isEqualTo(expectedHops);
+        assertThat(golden.stream().mapToLong(references::countByPaymentId).sum())
+                .isEqualTo(expectedReferences);
     }
 
     @Test
@@ -168,6 +187,70 @@ class ScenarioLoaderTest {
         assertThat(absent.getOccurredAt()).isNull();
         assertThat(absent.getStatus()).isEqualTo("ABSENT");
         assertThat(absent.getAttrs()).containsKeys("elapsedHours", "slaHours");
+    }
+
+    @Test
+    void takingAPaymentInCreatesANewOneRatherThanReopeningAnOld() throws Exception {
+        long before = payments.count();
+
+        PaymentIntake.Taken taken = intake.take("PXE-011", null, null);
+
+        assertThat(taken.paymentId())
+                .as("a scan is a payment going in, so it gets its own id")
+                .startsWith("PAY-")
+                .isNotEqualTo("PXE-011");
+        assertThat(payments.count()).isEqualTo(before + 1);
+
+        // It carries the same recorded events, and it went through the same funnel: its own hops,
+        // its own deviations, its own debt.
+        assertThat(hops.countByPaymentId(taken.paymentId()))
+                .isEqualTo(hops.countByPaymentId("PXE-011"));
+        assertThat(payments.findById(taken.paymentId()).orElseThrow().isDebtOpen())
+                .as("no rule explains PXE-011, so the copy owes an explanation too")
+                .isTrue();
+
+        // And the golden record is untouched, which is what keeps the eval harness meaningful.
+        assertThat(payments.findById("PXE-011")).isPresent();
+    }
+
+    @Test
+    void theCustomerChoosesTheAmountAndEveryRecordedFigureMovesWithIt() throws Exception {
+        // PXE-012 is settled short by a processing fee. Pay a different amount and the shortfall
+        // has to move with it, or the timeline contradicts the total printed above it.
+        PaymentIntake.Taken taken = intake.take("PXE-012", 50_000L, null);
+
+        assertThat(taken.amountMinor()).isEqualTo(50_000L);
+        assertThat(payments.findById(taken.paymentId()).orElseThrow().getAmountMinor())
+                .isEqualTo(50_000L);
+
+        long captured = hops.findByPaymentIdOrderBySeqAsc(taken.paymentId()).stream()
+                .filter(h -> "CAPTURED".equals(h.getStage()))
+                .findFirst().orElseThrow().getAmountMinor();
+        long settled = hops.findByPaymentIdOrderBySeqAsc(taken.paymentId()).stream()
+                .filter(h -> "PAYOUT_CREDITED".equals(h.getStage()))
+                .findFirst().orElseThrow().getAmountMinor();
+
+        assertThat(captured).isEqualTo(50_000L);
+        assertThat(settled)
+                .as("still short, in proportion, because a processing fee is a percentage")
+                .isLessThan(captured)
+                .isGreaterThan(0);
+    }
+
+    @Test
+    void aShortfallTooSmallToPrintIsNotAShortfallOfZero() throws Exception {
+        // Scaled far enough down, the fee would round away. Rounding a real difference to nothing
+        // would turn a reconciliation break into a clean payment.
+        PaymentIntake.Taken taken = intake.take("PXE-012", 10_000L, null);
+
+        long captured = hops.findByPaymentIdOrderBySeqAsc(taken.paymentId()).stream()
+                .filter(h -> "CAPTURED".equals(h.getStage()))
+                .findFirst().orElseThrow().getAmountMinor();
+        long settled = hops.findByPaymentIdOrderBySeqAsc(taken.paymentId()).stream()
+                .filter(h -> "PAYOUT_CREDITED".equals(h.getStage()))
+                .findFirst().orElseThrow().getAmountMinor();
+
+        assertThat(settled).isNotEqualTo(captured);
     }
 
     @Test

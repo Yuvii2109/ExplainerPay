@@ -149,16 +149,31 @@ class ExplanationPipelineTest {
             }
         }
 
-        // The three still open are exactly the three no rule can explain.
+        // The three golden payments still open are exactly the three no rule can explain. The
+        // ambiguity cases are open too, by construction, and are asserted separately.
         assertThat(payments.findByDebtOpenTrueOrderByAmountMinorDesc())
                 .extracting(Payment::getId)
+                .filteredOn(id -> id.startsWith("PXE-"))
                 .containsExactlyInAnyOrder("PXE-011", "PXE-012", "PXE-014");
     }
 
     @Test
     void theDebtQueueIsSortedByExposure() {
-        List<Payment> queue = payments.findByDebtOpenTrueOrderByAmountMinorDesc();
-        assertThat(queue).extracting(Payment::getId).containsExactly("PXE-012", "PXE-014", "PXE-011");
+        List<String> queue = payments.findByDebtOpenTrueOrderByAmountMinorDesc().stream()
+                .map(Payment::getId)
+                .filter(id -> id.startsWith("PXE-"))
+                .toList();
+        assertThat(queue).containsExactly("PXE-012", "PXE-014", "PXE-011");
+    }
+
+    @Test
+    void everyAmbiguityCaseReachesTheModelWithNoRuleExplainingIt() {
+        // The point of the set: a plausible answer is available and the deterministic funnel
+        // correctly refuses to supply one. If a rule ever fired here, the case would have stopped
+        // being ambiguous and would need rewriting rather than the rule loosening.
+        assertThat(payments.findByDebtOpenTrueOrderByAmountMinorDesc())
+                .extracting(Payment::getId)
+                .contains("AMB-001", "AMB-002", "AMB-003", "AMB-004");
     }
 
     @Test

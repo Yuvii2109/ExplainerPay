@@ -102,10 +102,41 @@ and can fail for weather reasons is not an assertion.
 cd web && npm run check:budgets   # section 17.7: compositor-only animations
 ```
 
-## Wiring a real QR
+## The QR
 
-Deferred, and the reason is worth knowing: a PSP test mode can force a decline, which reaches only
-the response-code path. The interesting scenarios, a reference mutating across a retry, a fee
-applied twice in a batch, are settlement and reconciliation failures that surface hours or days
-later, and no sandbox emits them on demand. The scenario selector on `/pay` chooses which failure
-the rails return. Say that out loud; pretending otherwise is not credible.
+The QR on `/pay` is real, scannable, and constant. It never changes address, so one code stays on
+screen for the whole demo.
+
+Scanning it opens a **checkout** on the phone. The customer picks an amount, or types their own, and
+presses pay. That creates a payment with its own id and its own debt, runs it through the whole
+funnel, and redirects to the timeline so they watch it being processed. The debt counter on the
+laptop moves while they look at it.
+
+What the rails do with that payment is armed on the merchant console beforehand, by clicking a row
+under **what the next scan does**. The customer chooses the amount; they do not choose whether their
+bank times out, which is also true outside a demo.
+
+Every recorded figure scales with the amount entered, in proportion. Pay 1,750.00 into the
+reconciliation-break scenario and the payout arrives as 1,749.84: the shortfall is a percentage fee
+in reality, so it is a percentage fee here. There is an **Open the checkout here** link beside the QR
+for filming without a phone.
+
+For that to work, open the console at your machine's network address rather than `localhost`:
+
+```bash
+ipconfig                      # or: ifconfig | grep inet
+# then browse to http://<that address>:13000/pay
+```
+
+The page tells you when the QR points somewhere only this machine can resolve. The browser-side API
+base is taken from the page host, and CORS allows private ranges, so nothing needs configuring
+beyond using the right address.
+
+Clicking a row chooses which failure the rails return for the next scan. Payments taken in are
+listed underneath, separately from the scenarios.
+
+**The rails are ours, and the demo should say so.** A PSP test mode can force a decline, which
+reaches only the response-code path. The interesting scenarios, a reference mutating across a retry
+and a fee applied twice in a batch, are settlement and reconciliation failures that surface hours or
+days later, and no sandbox emits them on demand. The scenario selector chooses which failure the
+rails return. Saying that out loud is credible; pretending otherwise is not.

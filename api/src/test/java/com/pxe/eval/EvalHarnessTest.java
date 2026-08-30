@@ -57,8 +57,12 @@ class EvalHarnessTest {
                 "Determinism",
                 "Deterministic coverage",
                 "Cost per explained payment");
-        assertThat(report.scenarios()).isEqualTo(15);
-        assertThat(report.rows()).hasSize(15);
+        assertThat(report.scenarios())
+                .as("the golden set is what coverage and accuracy are measured over")
+                .isEqualTo(15);
+        assertThat(report.rows())
+                .as("rows cover the golden set plus the ambiguity cases")
+                .hasSize(19);
     }
 
     @Test
@@ -78,7 +82,10 @@ class EvalHarnessTest {
         assertThat(metric(report, "Cause accuracy").denominator())
                 .as("scenarios owing a named cause: all but the two clean successes and the abstention")
                 .isEqualTo(12);
-        assertThat(metric(report, "Abstention correctness").denominator()).isEqualTo(1);
+        assertThat(metric(report, "Abstention correctness").denominator())
+                .as("PXE-014 plus the four ambiguity cases; a metric measured on one case is not "
+                        + "measured")
+                .isEqualTo(5);
         assertThat(metric(report, "Deterministic coverage").denominator()).isEqualTo(15);
     }
 

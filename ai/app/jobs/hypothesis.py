@@ -8,6 +8,7 @@ is why it is the job that is allowed to abstain, and the one whose output is alw
 from __future__ import annotations
 
 import json
+import re
 
 from .. import gemini
 from ..causes import CHOICES, UNDETERMINED
@@ -44,12 +45,17 @@ RESPONSE_SCHEMA = {
             "type": "ARRAY",
             "items": {
                 "type": "OBJECT",
-                "properties": {"cause": {"type": "STRING"}, "evidence": {"type": "STRING"}},
-                "required": ["cause", "evidence"],
+                "properties": {
+                    "cause": {"type": "STRING", "enum": CHOICES},
+                    "evidence": {"type": "STRING"},
+                    # The hop that rules this candidate out, or empty when nothing does.
+                    "ruled_out_by": {"type": "STRING"},
+                },
+                "required": ["cause", "evidence", "ruled_out_by"],
             },
         },
     },
-    "required": ["determinable", "root_cause", "claims"],
+    "required": ["determinable", "root_cause", "claims", "candidates_considered"],
 }
 
 
@@ -74,10 +80,54 @@ def _apply_g9(raw: dict) -> dict:
     return raw
 
 
+CITATION = re.compile(r"^(hop|ref|rule|code):.+")
+
+
+def _must_separate(raw: dict) -> dict:
+    """A cause is only named when the record rules the alternatives out.
+
+    Asking a model to be careful does not make it careful. What does is refusing to accept an
+    answer whose own working does not support it: every rival candidate has to be ruled out by
+    something in the record, cited. If even one is left standing, two causes fit the evidence and
+    the honest output is that it cannot be determined.
+
+    This is the same move made everywhere else in the design. The model is not trusted to weigh
+    ambiguity well; it is required to show the evidence that resolved it, and the answer is
+    discarded when it cannot.
+    """
+    if not raw.get("determinable"):
+        return raw
+
+    named = raw.get("root_cause")
+    candidates = raw.get("candidates_considered") or []
+    rivals = [c for c in candidates if c.get("cause") != named]
+
+    # Weighing nothing is not the same as ruling everything out. Without this a response that
+    # simply declines to list an alternative sails through the check that exists to catch it.
+    if not rivals:
+        raw["determinable"] = False
+        raw["root_cause"] = None
+        raw["confidence"] = None
+        return raw
+
+    unresolved = [
+        candidate.get("cause")
+        for candidate in rivals
+        if not CITATION.match((candidate.get("ruled_out_by") or "").strip())
+    ]
+    if unresolved:
+        raw["determinable"] = False
+        raw["root_cause"] = None
+        raw["confidence"] = None
+    return raw
+
+
 def run(facts: FactSet) -> HypothesisResponse:
     prompt = json.dumps(facts.model_dump(), indent=2, default=str)
     raw, usage = gemini.generate(HYPOTHESIS, prompt, RESPONSE_SCHEMA)
-    result = HypothesisResult.model_validate(_apply_g9(_flatten_placeholders(raw)))
+    result = HypothesisResult.model_validate(
+        _must_separate(_apply_g9(_flatten_placeholders(raw)))
+    )
     return HypothesisResponse(
         result=result,
         usage=Usage(prompt_version=HYPOTHESIS_VERSION, **usage),

@@ -1,0 +1,147 @@
+{
+  "version": "1.0.0",
+  "purpose": "Cases where the correct output is that the cause cannot be determined. Each one is built so that a plausible answer is available and wrong: the record supports two or more mechanisms and contains nothing that separates them. They are scored for abstention correctness and false attribution, and deliberately kept out of the coverage denominator, because real traffic is not one fifth undeterminable and a metric that claims otherwise is lying.",
+  "scenarios": [
+    {
+      "id": "AMB-001",
+      "name": "two-confirmations-two-references",
+      "title": "The bank confirmed twice, under two different references",
+      "instrument": "NETBANKING",
+      "rail": "NETBANKING",
+      "amountMinor": 260000,
+      "currency": "INR",
+      "injectedCause": "UNDETERMINABLE_BY_DESIGN",
+      "expected": {
+        "tag": "SUCCESS", "responseCode": "00", "deviations": ["RRN_MUTATED"], "debt": 1,
+        "explanationRequired": true, "path": "ABSTAIN", "modelCalls": 1, "rule": null
+      },
+      "hops": [
+        { "seq": 1, "stage": "REDIRECT_ISSUED", "actor": "PXE", "at": "2026-03-16T09:00:00.000Z", "status": "OK" },
+        { "seq": 2, "stage": "BANK_SESSION", "actor": "PAYER_BANK", "at": "2026-03-16T09:00:26.000Z", "status": "OK" },
+        { "seq": 3, "stage": "CALLBACK_RECEIVED", "actor": "PAYER_BANK", "at": "2026-03-16T09:01:04.000Z", "status": "OK", "code": "00", "amountMinor": 260000, "reference": { "kind": "UTR", "value": "UTR2603160901" } },
+        { "seq": 4, "stage": "CALLBACK_RECEIVED", "actor": "PAYER_BANK", "at": "2026-03-16T09:01:31.000Z", "status": "OK", "code": "00", "amountMinor": 260000, "reference": { "kind": "UTR", "value": "UTR2603160955" } },
+        { "seq": 5, "stage": "SETTLEMENT_SCHEDULED", "actor": "PXE", "at": "2026-03-16T09:01:33.000Z", "status": "OK", "batch": "SB-9990", "cycle": "T+1" },
+        { "seq": 6, "stage": "PAYOUT_CREDITED", "actor": "MERCHANT_BANK", "at": "2026-03-17T14:02:00.000Z", "status": "OK", "amountMinor": 260000 }
+      ],
+      "explanation": {
+        "rootCause": null,
+        "determinable": false,
+        "confidence": null,
+        "hypothesis": false,
+        "abstained": true,
+        "citations": ["hop:3", "hop:4", "hop:6"],
+        "candidatesConsidered": [
+          { "cause": "DUPLICATE_CALLBACK", "evidence": "two confirmations, but the guard did not mark either as a duplicate and the references differ" },
+          { "cause": "CUSTOMER_PAID_TWICE", "evidence": "two references could be two payments, and one payout does not prove otherwise" },
+          { "cause": "BANK_REISSUED_REFERENCE", "evidence": "banks do re-reference a single payment, and nothing here says this one did" }
+        ]
+      },
+      "demoNote": "The one to show next to PXE-009. That case differs by a single field, duplicateOf, and is explained instantly by a rule with no model call. Remove the field and the same shape becomes undeterminable. A system that answers both confidently is guessing on one of them."
+    },
+    {
+      "id": "AMB-002",
+      "name": "captured-more-than-authorized",
+      "title": "Captured more than was authorized",
+      "instrument": "CARD",
+      "rail": "CARD_DOMESTIC",
+      "amountMinor": 1200000,
+      "currency": "INR",
+      "injectedCause": "UNDETERMINABLE_BY_DESIGN",
+      "expected": {
+        "tag": "SUCCESS", "responseCode": "00", "deviations": ["AMOUNT_MISMATCH"], "debt": 1,
+        "explanationRequired": true, "path": "ABSTAIN", "modelCalls": 1, "rule": null
+      },
+      "hops": [
+        { "seq": 1, "stage": "AUTH_REQUEST", "actor": "PXE", "at": "2026-03-17T10:30:00.000Z", "status": "OK", "amountMinor": 1000000 },
+        { "seq": 2, "stage": "NETWORK_AUTH", "actor": "NETWORK", "at": "2026-03-17T10:30:01.100Z", "status": "OK", "code": "00", "amountMinor": 1000000, "reference": { "kind": "ARN", "value": "ARN74512603170103" } },
+        { "seq": 3, "stage": "CAPTURED", "actor": "PXE", "at": "2026-03-17T16:12:00.000Z", "status": "OK", "amountMinor": 1200000 },
+        { "seq": 4, "stage": "SETTLEMENT_SCHEDULED", "actor": "PXE", "at": "2026-03-17T16:12:04.000Z", "status": "OK", "batch": "SB-9992", "cycle": "T+2" },
+        { "seq": 5, "stage": "PAYOUT_CREDITED", "actor": "MERCHANT_BANK", "at": "2026-03-19T14:02:00.000Z", "status": "OK", "amountMinor": 1200000 }
+      ],
+      "explanation": {
+        "rootCause": null,
+        "determinable": false,
+        "confidence": null,
+        "hypothesis": false,
+        "abstained": true,
+        "citations": ["hop:2", "hop:3", "hop:5"],
+        "candidatesConsidered": [
+          { "cause": "ORDER_AMENDED_AFTER_AUTHORIZATION", "evidence": "no amendment event was recorded, and one would be" },
+          { "cause": "TIP_OR_SURCHARGE_ADDED_AT_CAPTURE", "evidence": "plausible for this merchant category, and nothing in the record marks it" },
+          { "cause": "CAPTURE_AMOUNT_ENTERED_INCORRECTLY", "evidence": "indistinguishable from a legitimate over-capture using only these hops" }
+        ]
+      },
+      "demoNote": "The mirror of PXE-008. Capturing less than the authorization is a rule; capturing more is not, and the reason is that the record does not say why. The rule catalogue is correct to stay silent."
+    },
+    {
+      "id": "AMB-003",
+      "name": "debited-then-nothing-at-all",
+      "title": "Debited, and then the switch said nothing at all",
+      "instrument": "UPI",
+      "rail": "UPI_QR",
+      "amountMinor": 730000,
+      "currency": "INR",
+      "injectedCause": "UNDETERMINABLE_BY_DESIGN",
+      "expected": {
+        "tag": "PENDING", "responseCode": null, "deviations": ["LEDGER_ASYMMETRY"], "debt": 1,
+        "explanationRequired": true, "path": "ABSTAIN", "modelCalls": 1, "rule": null
+      },
+      "hops": [
+        { "seq": 1, "stage": "INTENT_CREATED", "actor": "PXE", "at": "2026-03-18T13:00:00.000Z", "status": "OK", "latencyMs": 11 },
+        { "seq": 2, "stage": "QR_SCANNED", "actor": "CUSTOMER_PSP", "at": "2026-03-18T13:00:07.000Z", "status": "OK", "latencyMs": 7000 },
+        { "seq": 3, "stage": "SWITCH_REQUEST", "actor": "NPCI", "at": "2026-03-18T13:00:07.400Z", "status": "OK", "latencyMs": 400 },
+        { "seq": 4, "stage": "PAYER_DEBIT", "actor": "PAYER_BANK", "at": "2026-03-18T13:00:08.900Z", "status": "OK", "code": "00", "latencyMs": 1500, "reference": { "kind": "RRN", "value": "445100001450" } },
+        { "seq": 5, "stage": "PAYEE_CREDIT", "actor": "PAYEE_BANK", "at": null, "status": "NOT_RECEIVED" }
+      ],
+      "explanation": {
+        "rootCause": null,
+        "determinable": false,
+        "confidence": null,
+        "hypothesis": false,
+        "abstained": true,
+        "citations": ["hop:3", "hop:4", "hop:5"],
+        "candidatesConsidered": [
+          { "cause": "SWITCH_RESPONSE_LOST_IN_TRANSIT", "evidence": "consistent, and so is every other candidate" },
+          { "cause": "BENEFICIARY_BANK_UNAVAILABLE", "evidence": "no response code was returned, so nothing points at the beneficiary bank rather than the switch" },
+          { "cause": "PAYEE_CREDIT_NEVER_ATTEMPTED", "evidence": "an absence is not evidence for whichever cause is most plausible" }
+        ]
+      },
+      "demoNote": "The one to show next to PXE-011. That case has code 96, which is a fact about where it broke; strip the code and the same debit without a credit stops being attributable. The difference between the two is one field, and the system treats them differently because of it."
+    },
+    {
+      "id": "AMB-004",
+      "name": "batch-says-included-payout-never-came",
+      "title": "The batch says it went, the payout never arrived",
+      "instrument": "UPI",
+      "rail": "UPI_COLLECT",
+      "amountMinor": 940000,
+      "currency": "INR",
+      "injectedCause": "UNDETERMINABLE_BY_DESIGN",
+      "expected": {
+        "tag": "SUCCESS", "responseCode": "00", "deviations": ["UNSETTLED"], "debt": 1,
+        "explanationRequired": true, "path": "ABSTAIN", "modelCalls": 1, "rule": null
+      },
+      "hops": [
+        { "seq": 1, "stage": "COLLECT_SENT", "actor": "PXE", "at": "2026-03-18T08:15:00.000Z", "status": "OK" },
+        { "seq": 2, "stage": "PAYER_DEBIT", "actor": "PAYER_BANK", "at": "2026-03-18T08:16:12.000Z", "status": "OK", "code": "00", "reference": { "kind": "RRN", "value": "445100001512" } },
+        { "seq": 3, "stage": "PAYEE_CREDIT", "actor": "PAYEE_BANK", "at": "2026-03-18T08:16:25.000Z", "status": "OK", "code": "00" },
+        { "seq": 4, "stage": "SETTLEMENT_SCHEDULED", "actor": "PXE", "at": "2026-03-18T08:16:40.000Z", "status": "OK", "batch": "SB-9995", "cycle": "T+1" },
+        { "seq": 5, "stage": "BATCH_CLOSED", "actor": "PXE", "at": "2026-03-19T18:00:00.000Z", "status": "CLOSED", "batch": "SB-9995", "included": true }
+      ],
+      "explanation": {
+        "rootCause": null,
+        "determinable": false,
+        "confidence": null,
+        "hypothesis": false,
+        "abstained": true,
+        "citations": ["hop:4", "hop:5"],
+        "candidatesConsidered": [
+          { "cause": "CLEARING_FILE_TRUNCATED_AT_SOURCE", "evidence": "the batch closed reporting the payment included, which is what a truncated file would also report" },
+          { "cause": "BENEFICIARY_ACCOUNT_FROZEN", "evidence": "no rejection was returned, and a freeze would usually produce one" },
+          { "cause": "PAYOUT_LEG_NEVER_RAN", "evidence": "no payout event of any kind exists, which is equally consistent with all three" }
+        ]
+      },
+      "demoNote": "The mirror of PXE-006. There the batch reported included=false and a rule explains the whole three-day stall. Flip that one field to true and the record stops saying where the money went. Beat 11 works better with two of these than with one."
+    }
+  ]
+}

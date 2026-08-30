@@ -21,6 +21,8 @@ from pydantic.alias_generators import to_camel
 
 DIGIT = re.compile(r"\d")
 PLACEHOLDER = re.compile(r"\{[A-Za-z0-9_]+\}")
+# hop:4 is a pointer at the record, not a figure being asserted about somebody money.
+CITATION = re.compile(r"(?:hop|ref|rule|code):[A-Za-z0-9_]+")
 
 
 def has_literal_number(text: str) -> bool:
@@ -29,7 +31,7 @@ def has_literal_number(text: str) -> bool:
     ``{amount_1}`` is a slot, not a number. Checking the raw string would reject the exact
     convention the prompt asks for, which is a rule punishing the behaviour it wants.
     """
-    return bool(DIGIT.search(PLACEHOLDER.sub("", text)))
+    return bool(DIGIT.search(CITATION.sub("", PLACEHOLDER.sub("", text))))
 
 
 class Wire(BaseModel):
@@ -60,10 +62,11 @@ class Claim(Wire):
 
 
 class Candidate(Wire):
-    """A cause that was considered and could not be distinguished from the others."""
+    """A cause that was weighed, and what in the record rules it out, if anything does."""
 
     cause: str
     evidence: str
+    ruled_out_by: str = ""
 
 
 class HypothesisResult(Wire):

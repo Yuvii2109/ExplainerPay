@@ -33,6 +33,7 @@ export type Explained = {
 export type Header = {
   paymentId: string;
   merchantId: string;
+  merchantName: string;
   amountMinor: number;
   currency: string;
   instrument: string;
@@ -65,9 +66,19 @@ export type Counters = {
 /** Server-side base URL, inside the compose network. */
 export const API = process.env.PXE_API_URL ?? "http://localhost:18080";
 
-/** Browser-side base URL, reachable from the host. */
+/**
+ * Browser-side base URL, derived from whatever host the page was opened on.
+ *
+ * A phone that scans the QR loads the console from the machine's network address, and "localhost"
+ * there means the phone. Taking the hostname from the page keeps the API on the same machine as
+ * the page that asked for it, whether that page was opened on the laptop or across the room.
+ */
+const API_PORT = process.env.NEXT_PUBLIC_PXE_API_PORT ?? "18080";
+
 export const PUBLIC_API =
-  process.env.NEXT_PUBLIC_PXE_API_URL ?? "http://localhost:18080";
+  typeof window === "undefined"
+    ? (process.env.NEXT_PUBLIC_PXE_API_URL ?? `http://localhost:${API_PORT}`)
+    : `${window.location.protocol}//${window.location.hostname}:${API_PORT}`;
 
 export function money(minor: number, currency: string) {
   return `${(minor / 100).toLocaleString("en-IN", {

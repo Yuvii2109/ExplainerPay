@@ -36,6 +36,8 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-pxe}
       PXE_AI_URL: http://pxe-ai:8000
       PXE_SCENARIOS_RESOURCE: file:/app/data/payment-scenarios.json
+      PXE_AMBIGUITY_RESOURCE: file:/app/data/ambiguity-set.json
+      PXE_MERCHANTS_RESOURCE: file:/app/data/merchants.json
       PXE_EXPECTATIONS_RESOURCE: file:/app/data/expectations.json
       PXE_RAIL_SEQUENCES_RESOURCE: file:/app/data/rail-sequences.json
       PXE_CAUSES_RESOURCE: file:/app/data/causes.json
@@ -75,6 +77,7 @@ services:
     environment:
       PXE_API_URL: http://pxe-api:8080
       NEXT_PUBLIC_PXE_API_URL: http://localhost:${PXE_PORT_API:-18080}
+      NEXT_PUBLIC_PXE_API_PORT: ${PXE_PORT_API:-18080}
     ports:
       - "${PXE_PORT_WEB:-13000}:3000"
     healthcheck:

@@ -68,11 +68,25 @@ wrong however well it fits the shape of the story. If an instruction was acknowl
 lost in transmission. If a debit succeeded, the payer bank was not unreachable. Read the hops you
 are about to cite and check that they support your cause rather than merely surround it.
 
-SECOND, what would tell this cause apart from the others? Name that evidence to yourself. If the
-evidence that would distinguish your cause from the next-best one is an event that is simply not in
-the record (a message nobody sent, a status nobody reported) then the record does not separate
-them and you must choose UNDETERMINED. An absence is not evidence for whichever cause you find most
-plausible. It is the reason you cannot choose between them.
+Then ask the harder version of the same question: would this mechanism have left a mark, and is the
+mark there? Systems record what they do. A suppressed duplicate carries a flag saying it was
+suppressed; a retry carries a link to what it retried; a reversal is an event, not an inference.
+When a cause implies a marker and the record does not carry it, the resemblance is not evidence, and
+choosing the cause anyway is asserting that something happened which nothing recorded. Two events
+that look alike are not the same event.
+
+SECOND, show your working. Fill "candidates_considered" with the cause you are choosing and at
+least one serious rival, and for every rival give "ruled_out_by": the citation of the hop that rules
+it out, written exactly as "hop:4". Not prose. A citation.
+
+Leave "ruled_out_by" empty when nothing in the record rules that rival out, and do not reach for a
+hop that merely sits near it. If any rival is left standing, two causes fit the same evidence and
+the honest answer is UNDETERMINED.
+
+This is enforced, not requested. An answer naming a cause while leaving a rival unresolved, or
+naming one without weighing any rival at all, is turned into an abstention before anybody sees it.
+There is nothing to be gained by asserting one anyway. An absence is not evidence for whichever
+cause you find most plausible; it is the reason you cannot choose between them.
 
 The most common failure in this job is not naming the wrong mechanism. It is naming any mechanism
 at all when the honest reading is that the evidence stops short.

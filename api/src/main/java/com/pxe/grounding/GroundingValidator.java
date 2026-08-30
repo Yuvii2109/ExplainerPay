@@ -29,6 +29,10 @@ public class GroundingValidator {
 
     private static final Pattern PLACEHOLDER = Pattern.compile("\\{([A-Za-z0-9_]+)}");
 
+    /** hop:4 is a pointer at the record, not a figure being asserted about money. */
+    private static final Pattern CITATION =
+            Pattern.compile("\b(?:hop|ref|rule|code):[A-Za-z0-9_]+");
+
     /**
      * G7. Phrases that assert the money arrived. Checked against whether it did.
      *
@@ -207,7 +211,12 @@ public class GroundingValidator {
      * the raw string would reject the very convention the prompt teaches.
      */
     private static boolean containsLiteralNumber(String text) {
-        return text != null && DIGIT.matcher(PLACEHOLDER.matcher(text).replaceAll("")).find();
+        if (text == null) {
+            return false;
+        }
+        String prose = CITATION.matcher(PLACEHOLDER.matcher(text).replaceAll(""))
+                .replaceAll("");
+        return DIGIT.matcher(prose).find();
     }
 
     private Optional<String> assertsSettlement(String rendering) {

@@ -8,6 +8,7 @@ import com.pxe.explain.ModelCall;
 import com.pxe.explain.ModelCallRepository;
 import com.pxe.explain.RuleHit;
 import com.pxe.explain.RuleHitRepository;
+import com.pxe.model.Merchants;
 import com.pxe.model.Payment;
 import com.pxe.model.PaymentHop;
 import com.pxe.model.PaymentHopRepository;
@@ -36,11 +37,12 @@ public class PaymentView {
     private final RuleHitRepository ruleHits;
     private final ModelCallRepository modelCalls;
     private final RailSequences rails;
+    private final Merchants merchants;
 
     public PaymentView(PaymentRepository payments, PaymentHopRepository hops,
                        DeviationRepository deviations, ExplanationRepository explanations,
                        RuleHitRepository ruleHits, ModelCallRepository modelCalls,
-                       RailSequences rails) {
+                       RailSequences rails, Merchants merchants) {
         this.payments = payments;
         this.hops = hops;
         this.deviations = deviations;
@@ -48,6 +50,7 @@ public class PaymentView {
         this.ruleHits = ruleHits;
         this.modelCalls = modelCalls;
         this.rails = rails;
+        this.merchants = merchants;
     }
 
     @Transactional(readOnly = true)
@@ -73,6 +76,7 @@ public class PaymentView {
         return new Header(
                 payment.getId(),
                 payment.getMerchantId(),
+                merchants.name(payment.getMerchantId()),
                 payment.getAmountMinor(),
                 payment.getCurrency(),
                 payment.getInstrument().name(),
@@ -104,7 +108,8 @@ public class PaymentView {
                 e.getPromptVersion());
     }
 
-    public record Header(String paymentId, String merchantId, long amountMinor, String currency,
+    public record Header(String paymentId, String merchantId, String merchantName,
+                         long amountMinor, String currency,
                          String instrument, String rail, String tag, String responseCode,
                          boolean debtOpen, Instant debtOpenedAt, Instant debtClosedAt,
                          List<String> deviations) {

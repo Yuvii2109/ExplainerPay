@@ -1,0 +1,32 @@
+[
+  {
+    "id": "MERCH-ESPALIER",
+    "name": "Espalier Coffee",
+    "category": "Cafe, Indiranagar",
+    "scenarios": ["PXE-001", "PXE-003", "PXE-005", "PXE-006", "AMB-003"]
+  },
+  {
+    "id": "MERCH-KAVERI",
+    "name": "Kaveri Provisions",
+    "category": "Grocery, Jayanagar",
+    "scenarios": ["PXE-004", "PXE-007", "PXE-010", "AMB-004"]
+  },
+  {
+    "id": "MERCH-NILGIRI",
+    "name": "Nilgiri Outfitters",
+    "category": "Apparel, Koramangala",
+    "scenarios": ["PXE-002", "PXE-008", "PXE-012", "AMB-002"]
+  },
+  {
+    "id": "MERCH-TANSA",
+    "name": "Tansa Diagnostics",
+    "category": "Healthcare, Whitefield",
+    "scenarios": ["PXE-009", "PXE-011", "PXE-015", "AMB-001"]
+  },
+  {
+    "id": "MERCH-SARAS",
+    "name": "Saras Interiors",
+    "category": "Furniture, HSR Layout",
+    "scenarios": ["PXE-013", "PXE-014"]
+  }
+]

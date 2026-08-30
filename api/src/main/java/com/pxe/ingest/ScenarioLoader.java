@@ -3,6 +3,7 @@ package com.pxe.ingest;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.pxe.model.Instrument;
+import com.pxe.model.Merchants;
 import com.pxe.model.Payment;
 import com.pxe.model.PaymentHop;
 import com.pxe.model.PaymentHopRepository;
@@ -18,6 +19,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,8 +45,7 @@ public class ScenarioLoader implements ApplicationRunner {
 
     private static final Logger log = LoggerFactory.getLogger(ScenarioLoader.class);
 
-    /** The dataset has one merchant. G2 needs a payment to belong to one. */
-    public static final String DEMO_MERCHANT = "MERCH-DEMO-001";
+    private final Merchants merchants;
 
     /**
      * Hop fields that become typed columns or a reference row. Every other field in a hop object
@@ -60,15 +61,20 @@ public class ScenarioLoader implements ApplicationRunner {
     private final PaymentReferenceRepository references;
     private final ObjectMapper mapper;
     private final Resource scenarios;
+    private final Resource ambiguity;
 
     public ScenarioLoader(PaymentRepository payments, PaymentHopRepository hops,
                           PaymentReferenceRepository references, ObjectMapper mapper,
-                          @Value("${pxe.scenarios-resource}") Resource scenarios) {
+                          Merchants merchants,
+                          @Value("${pxe.scenarios-resource}") Resource scenarios,
+                          @Value("${pxe.ambiguity-resource}") Resource ambiguity) {
         this.payments = payments;
         this.hops = hops;
         this.references = references;
         this.mapper = mapper;
+        this.merchants = merchants;
         this.scenarios = scenarios;
+        this.ambiguity = ambiguity;
     }
 
     @Override
@@ -88,26 +94,54 @@ public class ScenarioLoader implements ApplicationRunner {
             return;
         }
 
-        JsonNode document;
-        try (InputStream in = scenarios.getInputStream()) {
-            document = mapper.readTree(in);
+        for (Resource source : List.of(scenarios, ambiguity)) {
+            JsonNode document;
+            try (InputStream in = source.getInputStream()) {
+                document = mapper.readTree(in);
+            }
+            for (JsonNode scenario : document.get("scenarios")) {
+                ingest(scenario, scenario.get("id").asText());
+            }
         }
 
-        for (JsonNode scenario : document.get("scenarios")) {
-            loadScenario(scenario);
-        }
-
-        log.info("loaded scenarios from {}: {} payments, {} hops, {} references",
-                scenarios.getDescription(), payments.count(), hops.count(), references.count());
+        log.info("loaded {} payments, {} hops, {} references from the golden set and the "
+                        + "ambiguity set", payments.count(), hops.count(), references.count());
     }
 
-    private void loadScenario(JsonNode scenario) {
-        String id = scenario.get("id").asText();
+    /** Reads the dataset again. Cheap, and it keeps intake honest about where a scan comes from. */
+    public Optional<JsonNode> scenario(String scenarioId) throws IOException {
+        for (Resource source : List.of(scenarios, ambiguity)) {
+            JsonNode document;
+            try (InputStream in = source.getInputStream()) {
+                document = mapper.readTree(in);
+            }
+            for (JsonNode scenario : document.get("scenarios")) {
+                if (scenario.get("id").asText().equals(scenarioId)) {
+                    return Optional.of(scenario);
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    /**
+     * Writes one scenario in under the given payment id.
+     *
+     * <p>The id is a parameter because a live scan takes the same event set in under a fresh id.
+     * One ingestion path means a payment created on stage is stored exactly as a loaded one is,
+     * rather than nearly.
+     */
+    public void ingest(JsonNode scenario, String id) {
+        ingest(scenario, id, merchants.forScenario(scenario.get("id").asText()));
+    }
+
+    /** Under a chosen merchant, for a payment somebody made rather than one that was loaded. */
+    public void ingest(JsonNode scenario, String id, String merchantId) {
         JsonNode hopNodes = scenario.get("hops");
 
         payments.save(new Payment(
                 id,
-                DEMO_MERCHANT,
+                merchantId,
                 scenario.get("amountMinor").asLong(),
                 scenario.get("currency").asText(),
                 Instrument.valueOf(scenario.get("instrument").asText()),

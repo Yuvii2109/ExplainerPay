@@ -170,6 +170,14 @@ Other decisions:
 - **`pxe-web` runs `next dev`** in the container for now. Phase 5 needs a production build to
   measure the section 17.7 budgets.
 - **Published ports are shifted and overridable** (`PXE_PORT_POSTGRES`, `_API`, `_AI`, `_WEB`).
+- **The ambiguity set is a second corpus** (`data/ambiguity-set.json`, reference section 22.1). Four
+  cases built so a plausible answer is available and wrong, each a near-miss on a case the catalogue
+  explains confidently. Scored for abstention correctness and false attribution; kept out of the
+  coverage denominator, because folding them in would drag a true 80% coverage claim to 63%.
+- **A cause is only named when the record rules the alternatives out.** Job B has to list its rivals
+  and cite the hop that eliminates each one; an answer leaving a rival unresolved, or weighing no
+  rival at all, is turned into an abstention before anyone sees it. Asking a model to be careful
+  does not make it careful; refusing an answer whose own working does not support it does.
 - **An abstention does not pay the debt** (reference section 3). A response code pays it, a rule
   pays it, a cited hypothesis pays it. "Cannot be determined" is the correct output and it is still
   nobody having explained the payment: the money is missing and a human has to go and get the
@@ -300,7 +308,37 @@ Other decisions:
   on this machine exposes no engine endpoint the JVM can reach, and a second Postgres would add a
   dependency to prove what the first one already proves. Run `docker compose up -d` first, then
   `mvn test` from `api/`.
-- **QR wiring is deferred to phase 5** (PSP test mode vs simulated, reference section 23). The hop
+- **Merchants are real** (`data/merchants.json`, five of them, mapped to scenarios beside the
+  dataset rather than inside it so Appendix A stays a record of what happened rather than of who was
+  selling). `payments.merchant_id` was one hardcoded value, which made G2 vacuous and the debt queue
+  an undifferentiated list. The checkout now asks who you are paying, and the queue answers the
+  question ops asks first: whose money is unexplained.
+- **Exposure is not a bill.** The figure under each merchant is money whose fate the system cannot
+  account for. Nobody settles an explanation debt by paying it, and the checkout says so rather than
+  implying a customer can.
+- **A citation inside prose is not a literal number.** `hop:1` tripped G4 and threw away a valid
+  hypothesis, the same class of bug as `{amount_1}`. Both sides now mask citations as well as
+  placeholders before looking for digits.
+- **The customer chooses the amount; the merchant arms the failure.** The QR is constant and opens
+  a checkout; `ArmedScenario` holds what the rails will do next, set from the console. Nobody paying
+  a QR decides whether their bank times out, and splitting the two is what makes the scenario
+  selector honest rather than a magic wand.
+- **Recorded figures scale with the amount paid.** A partial capture is a fraction of an
+  authorization and a processing fee is a percentage of a capture, so scaling is the domain
+  behaviour, not a trick to make the numbers agree. A scaled quantity that would round to zero is
+  held at one minor unit: a shortfall of zero is a different payment from a shortfall too small
+  to print.
+- **A scan takes a payment in.** `POST /api/pay?as={scenario}` creates a payment with a fresh id
+  under the same ingestion path the loader uses, runs the funnel, and `/scan` redirects to it. The
+  event set is copied from a scenario because that is how a known failure is injected, and the
+  timestamps are copied unchanged: rebasing them onto now would look more alive and would quietly
+  break the expectation model, since a settlement deadline is an absolute time of day and the same
+  event set would or would not be late depending on the hour you scanned.
+- **The QR is real and scannable**, encoding a link to the selected payment on whatever host the
+  console was opened from. The browser-side API base is derived from `window.location.hostname`
+  rather than hard-coded, because on a phone `localhost` is the phone; CORS allows private ranges
+  for the same reason. Verified end to end from the machine's LAN address: page, preflight and SSE.
+- **QR wiring was deferred to phase 5** (PSP test mode vs simulated, reference section 23). The hop
   model stays rail-agnostic until then.
 
 ## Open against the document

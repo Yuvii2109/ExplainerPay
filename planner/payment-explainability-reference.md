@@ -734,6 +734,32 @@ anything explains, groundedness, numeric fidelity, determinism, false attributio
 `0/0`. A zero that means "nothing yet" and a zero that means "failing" are different facts, and the
 harness must not conflate them.
 
+## 22.1 The ambiguity set
+
+The golden set measures reach: how much of ordinary traffic the funnel explains, how cheaply, and
+how often it names the injected cause. It cannot measure honesty, because almost nothing in it is
+genuinely undeterminable and a metric with a denominator of one is not a metric.
+
+`data/ambiguity-set.json` is the second corpus. Every case in it is built so that a plausible answer
+is available and wrong: the record supports two or more mechanisms and contains nothing that
+separates them. Each is a near-miss on a case the catalogue explains confidently, differing by a
+single field.
+
+| Case | Differs from | By |
+| --- | --- | --- |
+| `AMB-001` | PXE-009, a suppressed duplicate | no duplicate flag, and the two references differ |
+| `AMB-002` | PXE-008, a partial capture | the capture exceeds the authorization instead |
+| `AMB-003` | PXE-011, an orphaned debit | no response code at all, so nothing says where it broke |
+| `AMB-004` | PXE-006, a batch exclusion | the batch reports the payment **included** |
+
+**It is scored for abstention correctness and false attribution, and kept out of the coverage
+denominator.** Production traffic is not one fifth undeterminable. Folding these into the golden set
+would drag deterministic coverage from 80% to 63% and make a true claim about the funnel read as a
+false one, which is the wrong trade for a number that is otherwise honest.
+
+**Adding cases here should make the numbers worse.** That is what the set is for. A corpus of
+adversarial cases that everything passes is a corpus that was written after the answers.
+
 **False attribution is the metric that matters most and the one nobody reports.** A system that
 explains 95% correctly and confidently misattributes 5% is worse in operations than one that
 explains 85% and abstains on the rest, because misattributions get acted upon. The target is

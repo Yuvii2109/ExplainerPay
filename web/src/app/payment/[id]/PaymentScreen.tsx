@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ExplanationPanel } from "@/components/ExplanationPanel";
+import { MoneyFlow } from "@/components/MoneyFlow";
 import { OutcomeTag } from "@/components/OutcomeTag";
 import { Timeline } from "@/components/Timeline";
 import { usePaymentStream } from "@/lib/stream";
@@ -79,6 +80,7 @@ export function PaymentScreen({ snapshot, live }: { snapshot: Snapshot; live: bo
         <span className="dim" title={`${snapshot.header.instrument} · ${snapshot.header.rail}`}>
           {label.rail(snapshot.header.rail)}
         </span>
+        <span className="dim payee-on-payment">to {snapshot.header.merchantName}</span>
         {!streaming ? (
           <button className="replay" onClick={() => setStreaming(true)}>
             replay hop by hop
@@ -95,6 +97,8 @@ export function PaymentScreen({ snapshot, live }: { snapshot: Snapshot; live: bo
         responseCode={showing.responseCode}
         deviations={showing.deviations}
       />
+
+      <MoneyFlow hops={current.hops} currency={current.header.currency} />
 
       <ExplanationPanel
         explanation={explanation}
