@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Live } from "@/components/Live";
-import { Widgets } from "@/components/Widgets";
+import { WidgetsClient } from "@/components/WidgetsClient";
 
 import "./globals.css";
 
@@ -15,8 +15,8 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" suppressHydrationWarning>
+      <body suppressHydrationWarning>
         <header className="chrome">
           <nav>
             <Link href="/pay">pay</Link>
@@ -24,7 +24,7 @@ export default function RootLayout({
             <Link href="/grounding">grounding</Link>
             <Link href="/eval">eval</Link>
           </nav>
-          <Widgets />
+          <WidgetsClient />
         </header>
         <Live />
         {children}

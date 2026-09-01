@@ -1005,12 +1005,14 @@ tbody tr {
   padding: 14px 16px;
   border-radius: 8px;
   background: var(--surface);
+  white-space: normal;
 }
 
 .payee-name {
   font-size: 15px;
   font-weight: 600;
   color: var(--text);
+  min-width: 0;
 }
 
 .payee-category {
@@ -1103,6 +1105,7 @@ tbody tr {
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
 }
 
 .bill-amount {
